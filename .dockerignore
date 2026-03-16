@@ -1,0 +1,16 @@
+.env
+.git
+.gitignore
+**/__pycache__
+**/*.py[cod]
+.venv
+venv
+.DS_Store
+.idea
+.vscode
+*.swp
+.claude
+static/stitch
+scripts
+*.md
+!requirements.txt

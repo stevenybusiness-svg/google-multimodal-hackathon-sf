@@ -1,0 +1,7 @@
+---
+description: Live meeting agent — voice, vision, actions. Single source: PROJECT.md. For Claude: use PROJECT.md § "For Claude" as system prompt.
+globs: "**/*.py, **/*.ts, **/*.js"
+alwaysApply: false
+---
+
+See PROJECT.md for all rules, contract, RCA tables, and checklists.

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting Agent</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary":         "#57abff",
+            "success":         "#3fb950",
+            "danger":          "#f85149",
+            "warning":         "#e3b341",
+            "bg-dark":         "#0d1117",
+            "surface":         "#161b22",
+            "border-muted":    "#30363d",
+            "text-main":       "#c9d1d9",
+            "text-muted":      "#8b949e",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"],
+            "mono":    ["Roboto Mono", "SFMono-Regular", "Menlo", "monospace"],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .screen { display: none; }
+    .screen.active { display: flex; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .action-card-enter { animation: slideIn 0.25s ease-out; }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+    #transcript::-webkit-scrollbar, #actions-feed::-webkit-scrollbar,
+    #summary-transcript::-webkit-scrollbar, #summary-actions::-webkit-scrollbar,
+    #doc-widget-content::-webkit-scrollbar, #doc-modal-body::-webkit-scrollbar {
+      width: 5px;
+    }
+    #transcript::-webkit-scrollbar-track, #actions-feed::-webkit-scrollbar-track,
+    #summary-transcript::-webkit-scrollbar-track, #summary-actions::-webkit-scrollbar-track,
+    #doc-widget-content::-webkit-scrollbar-track, #doc-modal-body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #transcript::-webkit-scrollbar-thumb, #actions-feed::-webkit-scrollbar-thumb,
+    #summary-transcript::-webkit-scrollbar-thumb, #summary-actions::-webkit-scrollbar-thumb,
+    #doc-widget-content::-webkit-scrollbar-thumb, #doc-modal-body::-webkit-scrollbar-thumb {
+      background: #30363d; border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-bg-dark text-text-main font-display antialiased">
+
+  <div class="flex flex-col min-h-[100dvh] max-w-5xl mx-auto w-full border-x border-border-muted bg-bg-dark">
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         SCREEN: HOME
+         ═══════════════════════════════════════════════════════════════════ -->
+    <section id="screen-home" class="screen active flex-col flex-1">
+
+      <!-- Header -->
+      <header class="flex items-center justify-between h-12 px-4 border-b border-border-muted bg-surface/50 backdrop-blur-md sticky top-0 z-10">
+        <h1 class="text-sm font-bold tracking-tight text-white">Real-Time Meeting AI</h1>
+        <div class="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border-muted bg-bg-dark text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+          <span class="material-symbols-outlined text-[12px]">settings_input_antenna</span>
+          v2.4.0
+        </div>
+      </header>
+
+      <!-- Hero + Document sidebar -->
+      <div class="flex flex-1 flex-col lg:flex-row overflow-hidden">
+      <main class="flex-1 flex flex-col items-center justify-center p-6 overflow-y-auto">
+        <div class="max-w-lg w-full">
+        <div class="text-center mb-12">
+          <div class="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-primary/40 bg-primary/10 text-primary text-base font-bold tracking-wide mb-6 shadow-lg shadow-primary/10">
+            <span class="material-symbols-outlined text-xl">videocam</span>
+            Google Meet Premium
+          </div>
+          <h2 class="text-4xl font-bold tracking-tight text-white mb-4">Introducing AI Meeting Agent</h2>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Your autonomous assistant that monitors sentiment, executes actions, and manages meeting workflows.
+          </p>
+        </div>
+
+        <!-- Features -->
+        <div class="space-y-8 w-full mb-12">
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 size-10 rounded-lg bg-surface border border-border-muted flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary">psychology_alt</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Real-time Sentiment Analysis</h3>
+              <p class="text-xs text-slate-400 mt-1">Intelligently decides whether to complete tasks based on emotional pulse of your conversation.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 size-10 rounded-lg bg-surface border border-border-muted flex items-center justify-center">
+              <span class="material-symbols-outlined text-success">auto_fix_high</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Autonomous Action Execution</h3>
+              <p class="text-xs text-slate-400 mt-1">Automatically does tasks for you, such as updating reports, sends messages, and schedules follow-ups.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 size-10 rounded-lg bg-surface border border-border-muted flex items-center justify-center">
+              <span class="material-symbols-outlined text-purple-400">settings_voice</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Voice &amp; Video Intelligence</h3>
+              <p class="text-xs text-slate-400 mt-1">Seamless integration with Gemini Live for high-fidelity transcription.</p>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="flex-shrink-0 size-10 rounded-lg bg-surface border border-border-muted flex items-center justify-center">
+              <span class="material-symbols-outlined text-teal-400">hub</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">3rd Party Integration</h3>
+              <p class="text-xs text-slate-400 mt-1">Integrated with your favorite apps including Google Calendar, Gmail, and Slack.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms -->
+        <div class="w-full pt-8 border-t border-border-muted">
+          <p class="text-[10px] text-slate-500 leading-relaxed text-center">
+            This AI feature may share meeting transcripts with AI service providers identified in our list of subprocessors. By starting, you agree to our Terms of Service.
+          </p>
+        </div>
+
+        <!-- CTA -->
+        <div class="mt-8 w-full">
+          <button id="start-btn" class="w-full h-14 bg-success hover:bg-success/90 text-white font-bold rounded-xl shadow-lg shadow-success/20 transition-all flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined">play_circle</span>
+            Start Meeting
+          </button>
+          <p id="start-error" class="hidden mt-3 text-xs text-danger text-center font-mono"></p>
+        </div>
+        </div>
+      </main>
+
+      <!-- Document sidebar -->
+      <aside id="doc-sidebar" class="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-border-muted bg-surface flex flex-col min-h-0">
+        <button id="doc-sidebar-toggle" class="flex items-center justify-between px-4 py-3 border-b border-border-muted w-full text-left hover:bg-bg-dark/50 transition-colors group">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-amber-400 text-lg">description</span>
+            <h2 class="text-xs font-bold text-white uppercase tracking-widest">Meeting Document</h2>
+            <span id="doc-status-badge" class="text-[10px] px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-400 font-mono uppercase font-bold">DRAFT</span>
+          </div>
+          <span id="doc-sidebar-chevron" class="material-symbols-outlined text-slate-400 text-lg group-hover:text-white transition-colors">expand_more</span>
+        </button>
+        <div id="doc-sidebar-body" class="hidden flex-col flex-1 min-h-0">
+          <div id="doc-widget-content" class="flex-1 overflow-y-auto p-4">
+            <div class="text-xs text-slate-500 text-center py-8">Loading document...</div>
+          </div>
+          <div class="p-3 border-t border-border-muted flex gap-2">
+            <button id="doc-expand-btn" class="flex-1 h-8 text-xs font-bold rounded-lg border border-border-muted bg-bg-dark text-text-main hover:border-primary/50 hover:text-primary transition-colors flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">open_in_full</span>
+              View
+            </button>
+            <button id="doc-download-btn" class="flex-1 h-8 text-xs font-bold rounded-lg border border-border-muted bg-bg-dark text-text-main hover:border-primary/50 hover:text-primary transition-colors flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">download</span>
+              Download
+            </button>
+          </div>
+        </div>
+      </aside>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         SCREEN: ACTIVE MEETING
+         ═══════════════════════════════════════════════════════════════════ -->
+    <section id="screen-meeting" class="screen flex-col flex-1">
+
+      <!-- Header -->
+      <header class="flex items-center justify-between h-12 px-4 border-b border-border-muted bg-surface/50 backdrop-blur-md sticky top-0 z-10">
+        <div class="flex items-center gap-3">
+          <h1 class="text-sm font-bold tracking-tight text-white">Meeting Intelligence</h1>
+          <!-- Status chip -->
+          <div id="status-chip" class="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border-muted bg-bg-dark text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+            <span class="material-symbols-outlined text-[12px]">settings_input_antenna</span>
+            <span id="status-text">Connecting...</span>
+          </div>
+          <!-- Sentiment pill -->
+          <div id="sentiment-pill" class="hidden items-center gap-1.5 px-2 py-0.5 rounded border border-success/50 bg-success/10 text-[10px] text-success font-mono uppercase tracking-wider">
+            <span class="material-symbols-outlined text-[12px]">mood</span>
+            <span id="sentiment-text">NEUTRAL</span>
+          </div>
+        </div>
+        <button id="stop-btn" class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-danger/10 border border-danger/30 text-danger text-xs font-bold hover:bg-danger/20 transition-colors">
+          <span class="material-symbols-outlined text-sm">stop_circle</span>
+          Stop
+        </button>
+      </header>
+
+      <!-- Mic level bar -->
+      <div class="w-full bg-surface h-[6px] relative">
+        <div id="mic-level" class="absolute inset-0 bg-success/60 w-0 transition-all duration-75"></div>
+      </div>
+
+      <!-- Content: Transcript + Actions (responsive) -->
+      <div class="flex flex-1 flex-col lg:flex-row overflow-hidden">
+
+        <!-- Transcript panel -->
+        <div class="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-border-muted min-h-0">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-border-muted bg-surface">
+            <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Live Transcript</h2>
+            <div id="processing-indicator" class="hidden flex items-center gap-1.5 text-[10px] text-slate-400">
+              <span class="pulse-dot inline-block w-1.5 h-1.5 rounded-full bg-success"></span>
+              Processing audio...
+            </div>
+          </div>
+          <div id="transcript" class="flex-1 overflow-y-auto p-4 font-mono text-sm leading-relaxed space-y-1 bg-bg-dark min-h-[200px]"></div>
+        </div>
+
+        <!-- Actions panel -->
+        <div class="w-full lg:w-80 flex flex-col bg-surface min-h-0">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-border-muted">
+            <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Detected Actions</h2>
+            <span id="action-count" class="hidden px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold">0 NEW</span>
+          </div>
+          <div id="actions-feed" class="flex-1 overflow-y-auto p-3 space-y-2 min-h-[150px]"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         SCREEN: MEETING SUMMARY
+         ═══════════════════════════════════════════════════════════════════ -->
+    <section id="screen-summary" class="screen flex-col flex-1">
+
+      <!-- Header -->
+      <header class="flex items-center justify-between h-12 px-4 border-b border-border-muted bg-surface/50 backdrop-blur-md sticky top-0 z-10">
+        <div class="flex items-center gap-3">
+          <h1 class="text-xs font-bold tracking-tight text-white">Meeting Intelligence</h1>
+          <div class="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border-muted bg-bg-dark text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+            <span class="material-symbols-outlined text-[12px]">check_circle</span>
+            Ended
+          </div>
+        </div>
+      </header>
+
+      <!-- Content: Transcript log + Summary sidebar -->
+      <div class="flex flex-1 flex-col lg:flex-row overflow-hidden">
+
+        <!-- Transcript log -->
+        <section class="flex-1 flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-border-muted min-h-0">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-border-muted bg-surface">
+            <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Transcript Log</h2>
+            <span id="summary-time-range" class="text-[10px] text-slate-500"></span>
+          </div>
+          <div id="summary-transcript" class="flex-1 overflow-y-auto p-6 font-mono text-sm leading-relaxed space-y-4"></div>
+        </section>
+
+        <!-- Actions summary sidebar -->
+        <aside class="w-full lg:w-80 bg-surface flex flex-col min-h-0">
+          <div class="p-4 border-b border-border-muted">
+            <h2 class="text-lg font-bold mb-1">Meeting Summary</h2>
+            <p id="summary-action-count" class="text-sm text-slate-400">0 Actions Captured</p>
+          </div>
+          <div id="summary-actions" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+          <!-- New meeting button -->
+          <div class="p-4 border-t border-border-muted">
+            <button id="new-meeting-btn" class="w-full h-10 bg-success hover:bg-success/90 text-white text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-lg">add</span>
+              New Meeting
+            </button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         BOTTOM NAV
+         ═══════════════════════════════════════════════════════════════════ -->
+    <nav id="bottom-nav" class="flex gap-2 border-t border-border-muted bg-surface px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 flex-shrink-0">
+      <a data-nav="home" class="flex flex-1 flex-col items-center justify-end gap-1 text-primary cursor-pointer">
+        <span class="material-symbols-outlined text-xl">home</span>
+        <p class="text-[10px] font-bold">Home</p>
+      </a>
+      <a data-nav="meeting" class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-xl">videocam</span>
+        <p class="text-[10px] font-medium">Meeting</p>
+      </a>
+      <a data-nav="summary" class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-xl">checklist</span>
+        <p class="text-[10px] font-medium">Actions</p>
+      </a>
+    </nav>
+  </div>
+
+  <!-- Hidden elements for vision capture -->
+  <video id="vision-video" class="hidden" autoplay muted playsinline></video>
+  <canvas id="vision-canvas" class="hidden"></canvas>
+
+  <!-- Document modal overlay -->
+  <div id="doc-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-surface border border-border-muted rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col shadow-2xl">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-border-muted">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-amber-400">description</span>
+          <h2 id="doc-modal-title" class="text-sm font-bold text-white">Marketing Brief</h2>
+        </div>
+        <button id="doc-modal-close" class="size-8 rounded-lg flex items-center justify-center hover:bg-bg-dark transition-colors">
+          <span class="material-symbols-outlined text-slate-400 hover:text-white">close</span>
+        </button>
+      </div>
+      <div id="doc-modal-body" class="flex-1 overflow-y-auto p-6"></div>
+    </div>
+  </div>
+
+  <script src="/static/app/core.js?v=7"></script>
+  <script src="/static/app/render.js?v=7"></script>
+  <script src="/static/app/documents.js?v=7"></script>
+  <script src="/static/app/media.js?v=7"></script>
+  <script src="/static/app/session.js?v=7"></script>
+  <script src="/static/app.js?v=7"></script>
+</body>
+</html>

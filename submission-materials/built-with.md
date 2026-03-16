@@ -1,0 +1,1 @@
+Python, FastAPI, Google Gemini API (gemini-3-flash-preview), Google Cloud Speech-to-Text v1, Google Cloud Vision API, Google Calendar API, Gmail API, Slack API, Google Cloud Run, Slack SDK, WebSocket, Tailwind CSS, JavaScript, Docker

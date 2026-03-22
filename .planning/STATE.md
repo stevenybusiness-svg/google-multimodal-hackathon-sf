@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Hackathon Submission
-status: unknown
-stopped_at: "01-01-PLAN.md: paused at checkpoint:human-action — awaiting GOOGLE_CALENDAR_TOKEN_JSON in .env"
-last_updated: "2026-03-22T22:59:27.845Z"
+status: Ready to execute
+stopped_at: "Completed 01-deploy-auth/01-02-PLAN.md — meeting-agent live at https://meeting-agent-31043195041.us-central1.run.app"
+last_updated: "2026-03-22T23:08:55.786Z"
 progress:
   total_phases: 2
   completed_phases: 0
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-22)
 ## Current Position
 
 Phase: 01 (deploy-auth) — EXECUTING
-Plan: 1 of 2
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -39,6 +39,7 @@ Plan: 1 of 2
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 0. Core | 6 | - | - |
+| Phase 01-deploy-auth P02 | 10 | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -49,6 +50,8 @@ Plan: 1 of 2
 - [Phase 0]: In-memory task log only — external Tasks API deferred
 - [Phase 0]: Gemini stack (not Claude) — Google DeepMind lead sponsor alignment
 - [Phase 01-deploy-auth]: credentials.json present; get_calendar_token.py requests calendar.events+gmail.send scopes in one OAuth2 flow
+- [Phase 01-deploy-auth]: Cloud Build source deploys use compute default SA — grant artifactregistry.writer to compute SA, not cloudbuild SA
+- [Phase 01-deploy-auth]: Use --env-vars-file for gcloud run deploy when env vars contain commas (e.g. JSON values)
 
 ### Pending Todos
 
@@ -62,6 +65,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T22:59:24.299Z
-Stopped at: 01-01-PLAN.md: paused at checkpoint:human-action — awaiting GOOGLE_CALENDAR_TOKEN_JSON in .env
+Last session: 2026-03-22T23:08:55.780Z
+Stopped at: Completed 01-deploy-auth/01-02-PLAN.md — meeting-agent live at https://meeting-agent-31043195041.us-central1.run.app
 Resume file: None

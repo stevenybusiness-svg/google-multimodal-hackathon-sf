@@ -49,7 +49,7 @@ Plans:
 
 Plans:
 - [x] 01-01: Calendar OAuth2 pre-auth (`scripts/get_calendar_token.py` → `.env`)
-- [ ] 01-02: Cloud Run deploy (gcloud + env vars + URL screenshot)
+- [x] 01-02: Cloud Run deploy (gcloud + env vars + URL screenshot)
 
 ### Phase 2: Demo Video
 **Goal**: ≤4min demo video recorded and edited, leading with the 3-action moment.
@@ -86,6 +86,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Core Implementation | 6/6 | Complete | 2026-03-22 |
-| 1. Deploy + Auth | 1/2 | In Progress|  |
+| 1. Deploy + Auth | 2/2 | Complete   | 2026-03-22 |
 | 2. Demo Video | 0/1 | Not started | - |
 | 3. Submit | 0/1 | Not started | - |

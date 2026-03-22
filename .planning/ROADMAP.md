@@ -36,7 +36,10 @@ Plans:
 
 </details>
 
-### 🚧 Phase 1: Deploy + Auth
+<details>
+<summary>✅ Phase 1: Deploy + Auth — COMPLETE</summary>
+
+### Phase 1: Deploy + Auth
 **Goal**: Live Cloud Run deployment with Calendar OAuth2 working; public URL captured.
 **Depends on**: Phase 0
 **Requirements**: DEPLOY-01, DEPLOY-02
@@ -51,20 +54,23 @@ Plans:
 - [x] 01-01: Calendar OAuth2 pre-auth (`scripts/get_calendar_token.py` → `.env`)
 - [x] 01-02: Cloud Run deploy (gcloud + env vars + URL screenshot)
 
+</details>
+
 ### Phase 2: Demo Video
-**Goal**: ≤4min demo video recorded and edited, leading with the 3-action moment.
+**Goal**: <=4min demo video recorded via Loom, leading with the 4-action autonomous moment.
 **Depends on**: Phase 1
 **Requirements**: SUBMIT-01, SUBMIT-02
 **Success Criteria**:
-  1. Video opens with 3 action cards firing in ~5s (Calendar + task + doc revision)
+  1. Video opens with 4 action cards firing in ~5s (Calendar + task + Slack + doc revision)
   2. Facial sentiment + action gating shown on camera
-  3. Architecture diagram (See → Hear → Understand → Act) narrated
+  3. Architecture diagram (See -> Hear -> Understand -> Act) narrated
   4. Cloud Run URL shown live
-  5. Video is ≤4 min, exported and ready to upload
-**Plans**: 1 plan
+  5. Video is <=4 min, Loom shareable URL captured
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Record, edit, and export demo video per ROADMAP script
+- [ ] 02-01-PLAN.md — Pre-flight checks (git secrets audit + live service verification)
+- [ ] 02-02-PLAN.md — Record demo video in Loom + capture shareable URL
 
 ### Phase 3: Submit
 **Goal**: Hackathon submission complete before March 28, 2026 9:30 AM PST.
@@ -86,6 +92,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Core Implementation | 6/6 | Complete | 2026-03-22 |
-| 1. Deploy + Auth | 2/2 | Complete   | 2026-03-22 |
-| 2. Demo Video | 0/1 | Not started | - |
+| 1. Deploy + Auth | 2/2 | Complete | 2026-03-22 |
+| 2. Demo Video | 0/2 | Not started | - |
 | 3. Submit | 0/1 | Not started | - |

@@ -41,7 +41,7 @@
 ### Deploy
 
 - [x] **DEPLOY-01**: Backend deployed to Cloud Run; public URL captured for submission proof
-- [ ] **DEPLOY-02**: `GOOGLE_CALENDAR_TOKEN_JSON` in env (from `scripts/get_calendar_token.py`)
+- [x] **DEPLOY-02**: `GOOGLE_CALENDAR_TOKEN_JSON` in env (from `scripts/get_calendar_token.py`)
 
 ### Submission
 
@@ -91,7 +91,7 @@
 | UI-03 | Phase 0 | Complete |
 | UI-04 | Phase 0 | Complete |
 | DEPLOY-01 | Phase 1 | Complete |
-| DEPLOY-02 | Phase 1 | Pending |
+| DEPLOY-02 | Phase 1 | Complete |
 | SUBMIT-01 | Phase 2 | Pending |
 | SUBMIT-02 | Phase 2 | Pending |
 | SUBMIT-03 | Phase 3 | Pending |

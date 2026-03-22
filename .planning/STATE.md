@@ -52,6 +52,7 @@ Plan: 2 of 2
 - [Phase 01-deploy-auth]: credentials.json present; get_calendar_token.py requests calendar.events+gmail.send scopes in one OAuth2 flow
 - [Phase 01-deploy-auth]: Cloud Build source deploys use compute default SA — grant artifactregistry.writer to compute SA, not cloudbuild SA
 - [Phase 01-deploy-auth]: Use --env-vars-file for gcloud run deploy when env vars contain commas (e.g. JSON values)
+- [Phase 01-deploy-auth 01-01]: Token stored as raw JSON string in .env (no base64); refresh_token present for auto-renewal; googleapiclient not installed locally but present in requirements.txt for Cloud Run
 
 ### Pending Todos
 
@@ -59,12 +60,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- `GOOGLE_CALENDAR_TOKEN_JSON` missing from `.env` — run `python scripts/get_calendar_token.py`
-- Cloud Run not deployed — needs `gcloud auth` + project configured
 - Hackathon March 28 9:30 AM PST hard deadline — 6 days
+- Phase 2 (demo video) not yet started — record 4-min demo video per ROADMAP script
 
 ## Session Continuity
 
-Last session: 2026-03-22T23:08:55.780Z
-Stopped at: Completed 01-deploy-auth/01-02-PLAN.md — meeting-agent live at https://meeting-agent-31043195041.us-central1.run.app
+Last session: 2026-03-22
+Stopped at: Completed 01-deploy-auth/01-01-PLAN.md — GOOGLE_CALENDAR_TOKEN_JSON validated in .env; Phase 1 fully complete
 Resume file: None

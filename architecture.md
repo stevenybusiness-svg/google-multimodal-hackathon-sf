@@ -2,6 +2,17 @@
 
 This file is the concise system-flow companion to [PROJECT.md](PROJECT.md). Contract, RCA, and product scope live there.
 
+## Multimodal Stack
+
+| Layer | Technology | Input | Output |
+|---|---|---|---|
+| **Hear** | Google Cloud Speech-to-Text v1 (`latest_long`, interim results) | PCM 16kHz stream | Real-time transcript (~200ms interim, ~1s final) |
+| **See** | Google Cloud Vision (Face Detection) | JPEG frames (2s debounce) | Facial sentiment (normalized 0–1 via `_norm`) |
+| **Understand** | Gemini Flash (`gemini-3-flash-preview`) | Transcript + face sentiment | Commitments, agreements, meeting requests, doc revisions |
+| **Act** | Google Calendar / Slack (doc upload) / Task log | Structured intent | Calendar event, doc revised + uploaded, task logged; negative sentiment gates (blocks) |
+
+> This is the core pitch for Multimodal Frontier: real inputs (voice + camera) → real understanding → real-world actions. Not a chatbot. Not a transcription tool.
+
 ## System Flow
 
 ```mermaid

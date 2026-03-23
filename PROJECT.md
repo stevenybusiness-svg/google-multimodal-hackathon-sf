@@ -6,11 +6,11 @@
 
 ## For Claude (paste as system prompt or project context)
 
-You are working on a **live meeting agent** that autonomously executes actions from what is said and agreed in meetings — Slack sent, calendar event created, task logged, and document updated — the moment a commitment, meeting request, agreement, or document revision is detected. No human gate. Sentiment informs *how* actions are taken (e.g. stressed face = buffer deadline, add risk flag) not *whether* they fire. Input: real-time voice + optional video. **Primary STT: Gemini Live API (only STT).** All AI calls must use Gemini — no Claude/Anthropic. Backend on Google Cloud Run. Submitted to the **Gemini Live Agent Challenge** (deadline March 16 2026); category: Live Agents.
+You are working on a **live meeting agent** that autonomously executes actions from what is said and agreed in meetings — calendar event created, task logged, and document updated — the moment a commitment, meeting request, agreement, or document revision is detected. Sentiment gates negative actions (explicit "no" or uncertain+negative face = blocked) and adjusts content on positive actions (risk flag, deadline buffer). Input: real-time voice + optional video. **Primary STT: Google Cloud Speech-to-Text v1 (streaming, interim results).** All understanding/revision AI calls use Gemini (Google DeepMind is lead sponsor; keep stack aligned). Backend on Google Cloud Run. Submitted to the **Multimodal Frontier Hackathon** (March 28, 2026, San Francisco); sponsored by Google DeepMind + DigitalOcean; $45k+ prize pool.
 
 **Contract:** transcript (text, speaker?, ts) → understanding → commitment (owner, what, by_when?, sentiment?) or agreement (summary, sentiment?) or meeting_request (summary, attendees?, when?, sentiment?) or document_revision (change, section?) → action_request (type, payload) → Slack/tasks/calendar/document upload. Define commitment vs agreement in one place; action router consumes only these shapes.
 
-**Non-negotiable rules:** (1) Voice: never silence-gate audio sent to STT; send continuous stream; use RMS only for UI; Gemini Live API is the only STT. (2) Vision: always guard len(face_annotations) and object lists before indexing; normalize likelihood enums to 0–1 or high/medium/low in one place; face = pixel coords, object = normalized. (3) Structure: split backend by pipeline (voice, understanding, actions); no single 2k+ line server file. (4) One project doc (this file); no separate CONTRACT or per-pipeline flow docs.
+**Non-negotiable rules:** (1) Voice: never silence-gate audio sent to STT; send continuous stream; use RMS only for UI; Google Cloud Speech-to-Text v1 is the STT (streaming, reconnects every 4 min before 5-min hard limit). (2) Vision: always guard len(face_annotations) and object lists before indexing; normalize likelihood enums to 0–1 or high/medium/low in one place; face = pixel coords, object = normalized. (3) Structure: split backend by pipeline (voice, understanding, actions); no single 2k+ line server file. (4) One project doc (this file); no separate CONTRACT or per-pipeline flow docs.
 
 When editing code, follow the checklists in §7 and the reuse vs avoid table in §8. Reference the full doc for contract details (§2), flows (§3), and RCA tables (§4–6).
 
@@ -20,7 +20,7 @@ When editing code, follow the checklists in §7 and the reuse vs avoid table in 
 
 - **Product:** Live meeting agent that **takes action** from what is said and agreed (Slack follow-ups, tasks, calendar, document updates). Sentiment used for prioritization and tone. **No memorabilia** (no storybook, memory video, Veo, image gen). No Chrome extension, no Tableau, no Claude/Anthropic.
 - **Input:** Real-time voice via Gemini Live API (+ optional video via Cloud Vision). **Output:** Autonomous actions — Slack messages, Google Calendar events, tasks, and document updates — fired the moment commitments, meeting requests, agreements, or document revisions are detected.
-- **Key differentiator:** Every other meeting tool transcribes; this one acts. Agent executes autonomously with no human gate. Sentiment is the intelligence layer: stressed face + commitment = Slack flagged as at-risk + deadline buffered 1 day. The demo moment: 3 actions fire in 5 seconds while a meeting is live.
+- **Key differentiator:** Every other meeting tool transcribes; this one acts. The agent is fully multimodal — it **sees** (Cloud Vision: facial sentiment), **hears** (Cloud STT: real-time transcription with interim results), and **understands** (Gemini Flash: intent extraction) — then acts: calendar events created, tasks logged, doc revisions uploaded to Slack. Negative sentiment gates actions (won't fire if speaker says "no" or face+uncertainty conflict). The demo moment: calendar event + task + doc revision fire in ~5 seconds while a meeting is live.
 
 ---
 
@@ -43,17 +43,17 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 
 | Flow | In | Out |
 |------|----|-----|
-| Voice | Mic PCM (all audio, no silence gating) | Transcript — **Gemini Live API** (`gemini-2.5-flash-native-audio-preview-12-2025` with built-in input transcription) |
+| Voice | Mic PCM (all audio, no silence gating) | Transcript — **Google Cloud Speech-to-Text v1** (streaming, interim + final results, reconnects every 4 min) |
 | Understanding | Transcript segments + face sentiment | Commitments + agreements + meeting_requests + document_revisions + sentiment via `gemini-3-flash-preview` |
-| Actions | Commitments / agreements / meeting-requests / document-revisions | Slack + Google Calendar + Tasks + document upload (autonomous; sentiment adjusts content/timing, not whether to fire) |
-| Vision | Frames (debounced every ~5s in the current app) | Face emotion; guarded, normalized; fed into Understanding |
+| Actions | Commitments / agreements / meeting-requests / document-revisions | Google Calendar + task log + doc upload to Slack; **negative/uncertain sentiment gates (blocks) actions**; positive sentiment adjusts content (risk flag) |
+| Vision | Frames (debounced every 2s) | Face emotion; guarded, normalized; fed into Understanding and action gating |
 
-**Hackathon compliance (Gemini Live Agent Challenge — deadline Mar 16 2026):**
-- Gemini Live API = primary real-time audio (required for "Live Agents" category)
-- All LLM calls = Gemini only (`google-genai` SDK); no Claude/Anthropic
-- At least one GCP service: Cloud Vision ✅ + Cloud Run (deploy before submission)
-- Submission needs: public repo + Cloud Run proof + system architecture diagram + ≤4min demo video
-- Win angle: 3 actions fire autonomously in 5s while meeting is live (Slack + Calendar + task). Sentiment = intelligence, not gate.
+**Hackathon compliance (Multimodal Frontier Hackathon — March 28, 2026):**
+- Theme: agents that **see, hear, and understand** the world — our stack maps exactly: Cloud Vision (see) + Gemini Live (hear) + Gemini Flash (understand)
+- Google DeepMind is lead sponsor; Gemini stack is strategic advantage with judges
+- DigitalOcean is co-sponsor; Cloud Run (GCP) is acceptable; DigitalOcean inference is optional upside if demoing model flexibility
+- Submission needs: public repo + live deploy proof + system architecture diagram + ≤4min demo video
+- Win angle: 3 autonomous actions fire in 5s triggered by multimodal input (voice + facial sentiment). No human gate. Real inputs from the real world.
 
 ---
 
@@ -65,7 +65,7 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 | Garbled / no STT | Sample rate mismatch (e.g. 48k sent as 16k) | Log `AudioContext.sampleRate`; verify once |
 | Solo / same-language | Prompt assumed two languages; model stayed silent | Define a strict transcribe-only mode |
 
-**Rules:** No client-side silence gating. Validate sample rate. Gemini Live API is the only STT. Current voice prompt is English-only transcription.
+**Rules:** No client-side silence gating. Validate sample rate. Google Cloud Speech-to-Text v1 is the STT (`model=latest_long`, `language_code=en-US`, `enable_automatic_punctuation=True`). Stream reconnects proactively at 4 min before the 5-min hard limit.
 
 ---
 
@@ -94,13 +94,13 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 
 ## 7. Checklists (Do Not Skip)
 
-**Voice:** [ ] No silence gating  [ ] Sample rate verified  [ ] Gemini Live API connected  [ ] Solo/same-language mode defined  [ ] Health: 5s speech → caption in 10s
+**Voice:** [ ] No silence gating  [ ] Sample rate verified (16kHz)  [ ] Cloud STT connected (`google.cloud.speech_v1`)  [ ] Stream reconnects at 4 min  [ ] Health: 5s speech → interim caption in <1s, final in ~1s
 
 **Vision:** [ ] Guard `face_annotations` / `localized_object_annotations`  [ ] Normalize likelihoods  [ ] Document face= pixel, object= normalized  [ ] Test route for one frame
 
 **Context:** [ ] Backend split by pipeline  [ ] One project doc; rules &lt; ~40 lines each  [ ] STT: Gemini Live API noted in one place
 
-**Hackathon:** [ ] Gemini Live API as primary STT  [ ] All LLM = Gemini (no Claude)  [ ] Google Calendar API integrated  [ ] Cloud Run deployed  [ ] Architecture diagram made  [ ] Demo video filmed (≤4min, leads with autonomous 3-action execution moment)  [ ] Devpost submission complete
+**Hackathon (Multimodal Frontier — Mar 28):** [ ] Gemini Live API as primary STT  [ ] All LLM = Gemini (aligned with Google DeepMind sponsor)  [ ] Google Calendar API integrated  [ ] Cloud Run deployed (screenshot/URL for proof)  [ ] Architecture diagram shows see+hear+understand layers  [ ] Demo video filmed (≤4min, opens with autonomous 3-action moment triggered by multimodal input)  [ ] Register + submit at luma.com/multimodalhack
 
 **Process:** [ ] After first integration: 5 min test (speak + optional camera); captions + at least one action  [ ] If document revisions stay in scope: verify revised brief upload path  [ ] Before demo: re-run checklists
 
@@ -119,9 +119,9 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 
 ## 9. Success Criteria
 
-1. **Voice:** Gemini Live API streaming → stable real-time transcript.
-2. **Understanding:** Transcript + face sentiment → commitments/agreements; conflict detection flags uncertain.
-3. **Actions:** Commitment → Slack sent + task logged autonomously; meeting request → Calendar event drafted; document revision → revised brief uploaded. Sentiment adjusts content (risk flag, deadline buffer). No human gate.
-4. **Vision:** No crash on no face; normalized sentiment; stress/conflict surfaces as action modifier in UI, not blocker.
+1. **Voice:** Google Cloud STT streaming → stable real-time transcript with interim results (~200ms).
+2. **Understanding:** Transcript + face sentiment → commitments/agreements/meeting_requests/doc_revisions; sentiment classified as positive/neutral/negative/uncertain.
+3. **Actions:** Commitment → task logged; meeting request → Calendar event created; document revision → revised brief uploaded to Slack. Negative sentiment blocks action. Uncertain + negative face blocks action. Positive/neutral proceed, with risk flag added for uncertain text.
+4. **Vision:** No crash on no face; normalized sentiment (0–1); face emotion feeds action gating (uncertain+angry/sad = blocked).
 5. **Deploy:** Backend running on Cloud Run; screenshot or URL as submission proof.
 6. **Demo:** ≤4min video opens with autonomous 3-action execution (Slack + Calendar + task fire in 5s). Sentiment shown as intelligence layer.

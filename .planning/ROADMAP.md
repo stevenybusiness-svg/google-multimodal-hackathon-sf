@@ -56,6 +56,22 @@ Plans:
 
 </details>
 
+### Phase 1.5: Live Architecture Visualization
+**Goal**: Split-screen live pipeline view showing data flowing through multimodal architecture in real-time, side-by-side with action outputs. Visual proof of autonomous decision-making for demo judges.
+**Depends on**: Phase 0
+**Requirements**: VIZ-01, VIZ-02, VIZ-03, VIZ-04, VIZ-05, VIZ-06
+**Success Criteria**:
+  1. Split-screen layout renders: pipeline graph (left) + action cards (right)
+  2. All pipeline nodes visible: Mic, STT, Camera, Vision, Gemini, Dispatcher, Slack, Calendar, TaskLog
+  3. Text understanding edge is visually thicker than vision/tone edges (primary vs informing)
+  4. Nodes pulse when active; particles animate along edges on data flow
+  5. Live stats update on nodes (transcript count, sentiment, actions fired)
+  6. Backend emits pipeline events via WebSocket; frontend animates in response
+**Plans**: TBD
+
+Plans:
+- [ ] TBD
+
 ### Phase 2: Demo Video
 **Goal**: <=4min demo video recorded via Loom, leading with the 4-action autonomous moment.
 **Depends on**: Phase 1
@@ -93,5 +109,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 0. Core Implementation | 6/6 | Complete | 2026-03-22 |
 | 1. Deploy + Auth | 2/2 | Complete | 2026-03-22 |
+| 1.5. Live Architecture Viz | 0/? | Not started | - |
 | 2. Demo Video | 0/2 | Not started | - |
 | 3. Submit | 0/1 | Not started | - |

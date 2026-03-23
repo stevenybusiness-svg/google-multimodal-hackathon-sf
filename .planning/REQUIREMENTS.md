@@ -43,10 +43,19 @@
 - [x] **DEPLOY-01**: Backend deployed to Cloud Run; public URL captured for submission proof
 - [x] **DEPLOY-02**: `GOOGLE_CALENDAR_TOKEN_JSON` in env (from `scripts/get_calendar_token.py`)
 
+### Visualization (Demo Impact)
+
+- [ ] **VIZ-01**: Split-screen layout: live pipeline graph (left) + action output cards (right)
+- [ ] **VIZ-02**: Node graph shows all pipeline stages: Mic → STT → Gemini → Dispatcher → Slack/Calendar/TaskLog, plus Camera → Vision → Gemini
+- [ ] **VIZ-03**: Text understanding (agreement detection) is visually primary; voice tone and facial sentiment shown as informing inputs with thinner edges
+- [ ] **VIZ-04**: Nodes pulse/glow when active; animated particles flow along edges when data passes through
+- [ ] **VIZ-05**: Real-time stats on nodes (transcript count, sentiment score, actions fired)
+- [ ] **VIZ-06**: Backend emits pipeline events over WebSocket so frontend can animate in real-time
+
 ### Submission
 
 - [ ] **SUBMIT-01**: Demo video ≤4min, opens with 3-action autonomous moment in ~5s
-- [ ] **SUBMIT-02**: Public GitHub repo confirmed
+- [x] **SUBMIT-02**: Public GitHub repo confirmed
 - [ ] **SUBMIT-03**: Submitted at luma.com/multimodalhack before March 28 9:30 AM PST
 
 ## v2 Requirements
@@ -92,13 +101,19 @@
 | UI-04 | Phase 0 | Complete |
 | DEPLOY-01 | Phase 1 | Complete |
 | DEPLOY-02 | Phase 1 | Complete |
+| VIZ-01 | Phase 1.5 | Pending |
+| VIZ-02 | Phase 1.5 | Pending |
+| VIZ-03 | Phase 1.5 | Pending |
+| VIZ-04 | Phase 1.5 | Pending |
+| VIZ-05 | Phase 1.5 | Pending |
+| VIZ-06 | Phase 1.5 | Pending |
 | SUBMIT-01 | Phase 2 | Pending |
-| SUBMIT-02 | Phase 2 | Pending |
+| SUBMIT-02 | Phase 2 | Complete |
 | SUBMIT-03 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 23 total
-- Mapped to phases: 23
+- v1 requirements: 29 total
+- Mapped to phases: 29
 - Unmapped: 0 ✓
 
 ---

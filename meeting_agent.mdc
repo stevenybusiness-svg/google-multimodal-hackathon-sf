@@ -1,7 +1,10 @@
 ---
-description: Live meeting agent — voice, vision, actions. Single source: PROJECT.md. For Claude: use PROJECT.md § "For Claude" as system prompt.
+description: Live meeting agent — see (Cloud Vision) + hear (Gemini Live) + understand (Gemini Flash) → autonomous actions. Submitted to Multimodal Frontier Hackathon (Mar 28 2026). Single source of truth: PROJECT.md.
 globs: "**/*.py, **/*.ts, **/*.js"
 alwaysApply: false
 ---
 
 See PROJECT.md for all rules, contract, RCA tables, and checklists.
+See REQUIREMENTS.md for functional/non-functional requirements.
+See ROADMAP.md for wave-based execution plan and demo script.
+See STATE.md for current blockers and next actions.

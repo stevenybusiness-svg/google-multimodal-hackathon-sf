@@ -155,8 +155,8 @@ window.MeetingAgent = window.MeetingAgent || {};
         : JSON.stringify(action);
     }
 
-    // Sentiment-aware styling: link the current facial sentiment to the action card
-    const sentiment = (state.currentSentiment || 'neutral').toLowerCase();
+    // Sentiment-aware styling: use per-action sentiment from backend; fall back to global
+    const sentiment = (action.sentiment || action.payload?.sentiment || state.currentSentiment || 'neutral').toLowerCase();
     const sentimentMeta = {
       positive:  { border: 'border-l-success',   icon: 'verified',          label: 'Confident',             cls: 'text-success' },
       happiness: { border: 'border-l-success',   icon: 'verified',          label: 'Confident',             cls: 'text-success' },

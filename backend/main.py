@@ -125,14 +125,21 @@ async def websocket_audio(ws: WebSocket):
     async def _dispatch(understanding: UnderstandingResult) -> None:
         try:
             face = session_state.vision.latest_sentiment()
-            actions = await session.dispatch(understanding, has_calendar=calendar_service is not None, face_sentiment=face)
-            _all_actions.extend(actions)
-            for action in actions:
+
+            async def _on_action(action: dict) -> None:
                 if action["type"] == "document":
                     payload = action["payload"]
                     if isinstance(payload, dict) and payload.get("content"):
                         session_state.document_content = payload["content"]
                 await send(make_ws_message("action", action))
+
+            actions = await session.dispatch(
+                understanding,
+                has_calendar=calendar_service is not None,
+                face_sentiment=face,
+                on_action=_on_action,
+            )
+            _all_actions.extend(actions)
         except Exception as exc:
             logger.error("[%s] _dispatch failed: %s", sid, exc)
 

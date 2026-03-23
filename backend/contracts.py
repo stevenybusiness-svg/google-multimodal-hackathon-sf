@@ -67,6 +67,7 @@ class ActionResult(TypedDict):
     payload: object
     status: ActionStatus
     error: NotRequired[str]
+    sentiment: NotRequired[str]
 
 
 class TranscriptPayload(TypedDict):
@@ -105,6 +106,7 @@ def make_action_result(
     payload: object,
     status: ActionStatus,
     error: str | None = None,
+    sentiment: str | None = None,
 ) -> ActionResult:
     result: ActionResult = {
         "type": action_type,
@@ -113,6 +115,8 @@ def make_action_result(
     }
     if error:
         result["error"] = error
+    if sentiment:
+        result["sentiment"] = sentiment
     return result
 
 

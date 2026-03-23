@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 
 from slack_sdk.errors import SlackApiError
@@ -263,17 +264,25 @@ class ActionSession:
         return False
 
     async def dispatch(self, understanding: UnderstandingResult, has_calendar: bool = False,
-                       face_sentiment: dict | None = None) -> list[ActionResult]:
+                       face_sentiment: dict | None = None,
+                       on_action: Callable | None = None) -> list[ActionResult]:
         actions: list[ActionResult] = []
+
+        async def _emit(results: list[ActionResult]) -> None:
+            actions.extend(results)
+            if on_action:
+                for r in results:
+                    await on_action(r)
+
         for c in understanding.get("commitments", []):
-            actions.extend(await self._commitment(c, face_sentiment))
+            await _emit(await self._commitment(c, face_sentiment))
         for a in understanding.get("agreements", []):
-            actions.extend(await self._agreement(a, face_sentiment))
+            await _emit(await self._agreement(a, face_sentiment))
         for r in understanding.get("meeting_requests", []):
-            actions.extend(await self._meeting_request(r, has_calendar, face_sentiment))
+            await _emit(await self._meeting_request(r, has_calendar, face_sentiment))
         revisions = understanding.get("document_revisions", [])
         if revisions:
-            actions.extend(await self._document_revision(revisions))
+            await _emit(await self._document_revision(revisions))
         return actions
 
     async def _commitment(self, c: dict, face_sentiment: dict | None = None) -> list[ActionResult]:
@@ -287,9 +296,9 @@ class ActionSession:
 
         if self._should_block(sent, face_sentiment):
             logger.info("Commitment BLOCKED (face=%s, text=%s): %s", face_sentiment, sent, what)
-            return [make_action_result("task", entry, "blocked")]
+            return [make_action_result("task", entry, "blocked", sentiment=sent)]
 
-        return [make_action_result("task", entry, "logged")]
+        return [make_action_result("task", entry, "logged", sentiment=sent)]
 
     async def _agreement(self, a: dict, face_sentiment: dict | None = None) -> list[ActionResult]:
         summary = a.get("summary", "")
@@ -297,9 +306,9 @@ class ActionSession:
 
         if self._should_block(sent, face_sentiment):
             logger.info("Agreement BLOCKED (face=%s, text=%s): %s", face_sentiment, sent, summary)
-            return [make_action_result("task", {"summary": summary, "sentiment": sent}, "blocked")]
+            return [make_action_result("task", {"summary": summary, "sentiment": sent}, "blocked", sentiment=sent)]
 
-        return [make_action_result("task", {"summary": summary, "sentiment": sent}, "logged")]
+        return [make_action_result("task", {"summary": summary, "sentiment": sent}, "logged", sentiment=sent)]
 
     async def _meeting_request(self, r: dict, has_calendar: bool = False,
                                face_sentiment: dict | None = None) -> list[ActionResult]:
@@ -310,15 +319,15 @@ class ActionSession:
 
         if self._should_block(sent, face_sentiment):
             logger.info("Meeting request BLOCKED (face=%s, text=%s): %s", face_sentiment, sent, summary)
-            return [make_action_result("calendar", {"summary": summary, "when": when}, "blocked")]
+            return [make_action_result("calendar", {"summary": summary, "when": when}, "blocked", sentiment=sent)]
 
         if has_calendar and _calendar_creds is not None:
             try:
                 event = await create_calendar_event(summary, when, attendees, sent)
-                return [make_action_result("calendar", event, "sent")]
+                return [make_action_result("calendar", event, "sent", sentiment=sent)]
             except Exception as exc:
                 logger.error("Calendar event failed: %s", exc)
-                return [make_action_result("calendar", {"summary": summary}, "failed", str(exc))]
+                return [make_action_result("calendar", {"summary": summary}, "failed", str(exc), sentiment=sent)]
 
         # No calendar configured — log only
         logger.info("Meeting requested (no calendar): %s", summary)

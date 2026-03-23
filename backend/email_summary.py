@@ -117,7 +117,7 @@ async def send_meeting_summary(
             ).execute
         )
         logger.info("Summary email sent to %s: id=%s", RECIPIENTS, result.get("id", "?"))
-        return make_action_result("email", {"to": ", ".join(RECIPIENTS), "message_id": result.get("id")}, "sent")
+        return make_action_result("email", {"to": ", ".join(RECIPIENTS), "message_id": result.get("id")}, "sent", sentiment="neutral")
     except Exception as exc:
         logger.error("Gmail send failed: %s (type=%s)", exc, type(exc).__name__)
-        return make_action_result("email", {"to": ", ".join(RECIPIENTS)}, "failed", str(exc))
+        return make_action_result("email", {"to": ", ".join(RECIPIENTS)}, "failed", str(exc), sentiment="neutral")

@@ -139,7 +139,7 @@ class TranscriptBuffer:
     - End-of-meeting flush() ignores minimums
     """
 
-    _COOLDOWN_S = 2.0   # wait 2s of silence before flushing (real-time feel)
+    _COOLDOWN_S = 0.2   # wait 0.2s of silence before flushing (STT already segments on boundaries)
     _MIN_FLUSH_CHARS = 30  # flush even short segments for responsiveness
 
     def __init__(self) -> None:

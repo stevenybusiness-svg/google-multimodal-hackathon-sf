@@ -69,7 +69,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Pre-flight checks (git secrets audit + live service verification)
+- [x] 02-01-PLAN.md — Pre-flight checks (git secrets audit + live service verification)
 - [ ] 02-02-PLAN.md — Record demo video in Loom + capture shareable URL
 
 ### Phase 3: Submit

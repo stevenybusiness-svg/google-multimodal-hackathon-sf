@@ -67,10 +67,11 @@ Plans:
   4. Nodes pulse when active; particles animate along edges on data flow
   5. Live stats update on nodes (transcript count, sentiment, actions fired)
   6. Backend emits pipeline events via WebSocket; frontend animates in response
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] TBD
+- [ ] 01.5-01-PLAN.md — Backend pipeline events + split-screen HTML layout
+- [ ] 01.5-02-PLAN.md — Canvas pipeline renderer with particles, glow, and live stats
 
 ### Phase 2: Demo Video
 **Goal**: <=4min demo video recorded via Loom, leading with the 4-action autonomous moment.

@@ -105,6 +105,7 @@ async def websocket_audio(ws: WebSocket):
     sid = session_id[:8]  # short ID for log readability
     logger.info("[%s] WebSocket session started", sid)
     session_state = session_registry.ensure(session_id)
+    session_state.ws_send = None  # set after send() is defined
     pipeline = VoicePipeline()
     buf      = TranscriptBuffer()
     session  = ActionSession(session_id=session_id)
@@ -120,6 +121,8 @@ async def websocket_audio(ws: WebSocket):
         except Exception:
             return False
 
+    session_state.ws_send = send
+
     _bg_tasks: set[asyncio.Task] = set()  # strong refs prevent GC before completion
 
     async def _dispatch(understanding: UnderstandingResult) -> None:
@@ -132,6 +135,7 @@ async def websocket_audio(ws: WebSocket):
                     if isinstance(payload, dict) and payload.get("content"):
                         session_state.document_content = payload["content"]
                 await send(make_ws_message("action", action))
+                await send(make_ws_message("pipeline", {"event": "action_dispatched", "action_type": action["type"]}))
 
             actions = await session.dispatch(
                 understanding,
@@ -145,11 +149,13 @@ async def websocket_audio(ws: WebSocket):
 
     async def on_interim(text: str) -> None:
         """Send interim (partial) transcript to client for low-latency display."""
+        await send(make_ws_message("pipeline", {"event": "stt_start"}))
         await send(make_ws_message("interim", {"text": text}))
 
     async def on_transcript(text: str) -> None:
         """Send final transcript to client and process through understanding."""
         _transcript_segments.append(text)
+        await send(make_ws_message("pipeline", {"event": "stt_result", "stats": {"words": len(text.split())}}))
         transcript_payload: TranscriptPayload = {"text": text}
         if not await send(make_ws_message("transcript", transcript_payload)):
             return
@@ -157,6 +163,10 @@ async def websocket_audio(ws: WebSocket):
         await send(make_ws_message("status", status_payload))
 
         async def _handle_understanding(understanding: UnderstandingResult) -> None:
+            await send(make_ws_message("pipeline", {"event": "understanding_result", "stats": {
+                "sentiment": understanding.get("sentiment", "neutral"),
+                "actions": sum(len(understanding.get(k, [])) for k in ("commitments", "agreements", "meeting_requests", "document_revisions"))
+            }}))
             logger.info("[%s] Understanding result: %s", sid, json.dumps(understanding)[:300])
             sentiment_payload: SentimentPayload = {"value": understanding.get("sentiment", "neutral")}
             await send(make_ws_message("sentiment", sentiment_payload))
@@ -167,6 +177,7 @@ async def websocket_audio(ws: WebSocket):
                 t.add_done_callback(_bg_tasks.discard)
 
         face = session_state.vision.latest_sentiment()
+        await send(make_ws_message("pipeline", {"event": "understanding_start"}))
         understanding = await buf.process(text, face, on_result=_handle_understanding)
         if understanding is None:  # None = still buffering or cooldown pending
             return
@@ -277,6 +288,7 @@ async def websocket_audio(ws: WebSocket):
             await send(make_ws_message("done"))
 
         logger.info("[%s] Session cleaned up. Tasks logged: %d", sid, len(session.task_log))
+        session_state.ws_send = None
         session_registry.discard(session_id)
 
 
@@ -305,4 +317,15 @@ async def api_frame(request: Request):
     if len(frame_bytes) > _MAX_FRAME_BYTES:
         return JSONResponse({"error": "frame too large"}, status_code=413)
     result = await analyze_frame(frame_bytes, session_state.vision if session_state else None)
+    if result and session_state and session_state.ws_send:
+        try:
+            await session_state.ws_send(make_ws_message("pipeline", {
+                "event": "vision_result",
+                "stats": {
+                    "sentiment": result.get("sentiment", "neutral"),
+                    "score": round(result.get("engagement", 0) or 0, 2)
+                }
+            }))
+        except Exception:
+            pass  # WS may be closed; vision result still returned via REST
     return JSONResponse(result or {})

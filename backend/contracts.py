@@ -19,7 +19,7 @@ SentimentValue = Literal[
 ]
 ActionStatus = Literal["sent", "failed", "skipped", "logged", "blocked"]
 ActionType = Literal["slack", "calendar", "task", "document", "email"]
-WsMessageType = Literal["transcript", "interim", "status", "sentiment", "action", "done"]
+WsMessageType = Literal["transcript", "interim", "status", "sentiment", "action", "done", "pipeline"]
 
 UNDERSTANDING_KEYS = (
     "commitments",

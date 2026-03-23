@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any, Callable, Coroutine
 import time
 
 from backend.documents import MARKETING_BRIEF
@@ -33,6 +34,7 @@ class MeetingSessionState:
     document_title: str = "Product Launch Marketing Brief"
     document_status: str = "DRAFT"
     vision: VisionState = field(default_factory=VisionState)
+    ws_send: Callable[..., Coroutine[Any, Any, bool]] | None = None
 
 
 class SessionRegistry:

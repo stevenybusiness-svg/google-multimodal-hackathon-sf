@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Hackathon Submission
-status: Ready to plan
-stopped_at: Completed 02-demo-video/02-01-PLAN.md — pre-flight checks 10/10 PASS, READY FOR DEMO
-last_updated: "2026-03-23T00:15:07.819Z"
+status: Ready to execute
+stopped_at: Completed 01.5-01-PLAN.md
+last_updated: "2026-03-23T01:15:40.338Z"
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Three autonomous actions fire in ~5s from live voice + camera — no human gate.
-**Current focus:** Phase 02 — demo-video
+**Current focus:** Phase 01.5 — live-architecture-visualization
 
 ## Current Position
 
-Phase: 03
-Plan: Not started
+Phase: 01.5 (live-architecture-visualization) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Plan: Not started
 | 0. Core | 6 | - | - |
 | Phase 01-deploy-auth P02 | 10 | 3 tasks | 1 files |
 | Phase 02-demo-video P01 | 2 | 2 tasks | 1 files |
+| Phase 01.5 P01 | 303s | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -56,6 +57,9 @@ Plan: Not started
 - [Phase 01-deploy-auth 01-01]: Token stored as raw JSON string in .env (no base64); refresh_token present for auto-renewal; googleapiclient not installed locally but present in requirements.txt for Cloud Run
 - [Phase 02-demo-video]: SUBMIT-02 verified: repository is safe to make public — no real tokens in git history or source
 - [Phase 02-demo-video]: Slack bot token confirmed valid for demo recording (workspace: stevenyangdig-iom4276.slack.com, bot: ai_meeting_agent)
+- [Phase 01.5]: Pipeline events ride on existing /ws/audio WS connection (no new endpoint)
+- [Phase 01.5]: Vision pipeline events bridged via session_state.ws_send for REST-to-WS
+- [Phase 01.5]: Pipeline screen is separate from meeting screen; both coexist via nav
 
 ### Pending Todos
 
@@ -68,6 +72,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T00:02:35.477Z
-Stopped at: Completed 02-demo-video/02-01-PLAN.md — pre-flight checks 10/10 PASS, READY FOR DEMO
+Last session: 2026-03-23T01:15:40.329Z
+Stopped at: Completed 01.5-01-PLAN.md
 Resume file: None

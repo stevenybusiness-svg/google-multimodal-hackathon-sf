@@ -70,7 +70,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01.5-01-PLAN.md — Backend pipeline events + split-screen HTML layout
+- [x] 01.5-01-PLAN.md — Backend pipeline events + split-screen HTML layout
 - [ ] 01.5-02-PLAN.md — Canvas pipeline renderer with particles, glow, and live stats
 
 ### Phase 2: Demo Video

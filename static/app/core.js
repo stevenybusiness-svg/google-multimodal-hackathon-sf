@@ -4,6 +4,7 @@ window.MeetingAgent = window.MeetingAgent || {};
   const dom = {
     screens: {
       home: document.getElementById('screen-home'),
+      pipeline: document.getElementById('screen-pipeline'),
       meeting: document.getElementById('screen-meeting'),
       summary: document.getElementById('screen-summary'),
     },
@@ -26,6 +27,14 @@ window.MeetingAgent = window.MeetingAgent || {};
     summaryActions: document.getElementById('summary-actions'),
     summaryTimeRange: document.getElementById('summary-time-range'),
     summaryActionCount: document.getElementById('summary-action-count'),
+    pipelineCanvas: document.getElementById('pipeline-canvas'),
+    pipelineActions: document.getElementById('pipeline-actions'),
+    pipelineStatusText: document.getElementById('pipeline-status-text'),
+    pipelineSentimentPill: document.getElementById('pipeline-sentiment-pill'),
+    pipelineSentimentText: document.getElementById('pipeline-sentiment-text'),
+    pipelineMicLevel: document.getElementById('pipeline-mic-level'),
+    pipelineStopBtn: document.getElementById('pipeline-stop-btn'),
+    pipelineEmptyState: document.getElementById('pipeline-empty-state'),
     visionVideo: document.getElementById('vision-video'),
     visionCanvas: document.getElementById('vision-canvas'),
     docWidgetContent: document.getElementById('doc-widget-content'),
@@ -68,7 +77,7 @@ window.MeetingAgent = window.MeetingAgent || {};
   };
 
   const contracts = {
-    wsTypes: new Set(['transcript', 'interim', 'status', 'sentiment', 'action', 'done']),
+    wsTypes: new Set(['transcript', 'interim', 'status', 'sentiment', 'action', 'done', 'pipeline']),
     actionTypes: new Set(['slack', 'calendar', 'task', 'document']),
   };
 

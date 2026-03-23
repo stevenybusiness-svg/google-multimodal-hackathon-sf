@@ -13,13 +13,24 @@ window.MeetingAgent = window.MeetingAgent || {};
 
   function handleWsMessage(message) {
     if (!message || !contracts.wsTypes.has(message.type)) return;
+    if (message.type === 'pipeline') {
+      if (window.MeetingAgent.pipeline) {
+        window.MeetingAgent.pipeline.handlePipelineEvent(message.data);
+      }
+      return;
+    }
     if (message.type === 'done') {
       closeWs();
       return;
     }
     if (message.type === 'transcript') render.handleTranscriptMessage(message.data);
     if (message.type === 'interim') render.handleInterimMessage(message.data);
-    if (message.type === 'action') render.handleActionMessage(message.data);
+    if (message.type === 'action') {
+      render.handleActionMessage(message.data);
+      if (dom.pipelineActions) {
+        render.createActionCard(message.data, dom.pipelineActions);
+      }
+    }
     if (message.type === 'sentiment') render.handleSentimentMessage(message.data);
     if (message.type === 'status') render.handleStatusMessage(message.data);
   }
@@ -31,7 +42,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     render.setStartError('');
     render.resetMeetingState();
     ensureSessionId();
-    render.showScreen('meeting');
+    render.showScreen('pipeline');
     dom.statusText.textContent = 'Connecting...';
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -121,6 +132,9 @@ window.MeetingAgent = window.MeetingAgent || {};
     });
 
     dom.stopBtn.addEventListener('click', () => stopMeeting('user'));
+    if (dom.pipelineStopBtn) {
+      dom.pipelineStopBtn.addEventListener('click', () => stopMeeting('user'));
+    }
     dom.newMeetingBtn.addEventListener('click', () => {
       closeWs();
       resetSessionId();

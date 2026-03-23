@@ -60,6 +60,14 @@ window.MeetingAgent = window.MeetingAgent || {};
     ].join(' ');
     dom.sentimentPill.querySelector('.material-symbols-outlined').textContent = config.icon;
     dom.sentimentText.textContent = sentiment.toUpperCase();
+    if (dom.pipelineSentimentPill) {
+      dom.pipelineSentimentPill.classList.remove('hidden');
+      dom.pipelineSentimentPill.className = dom.sentimentPill.className;
+      dom.pipelineSentimentPill.querySelector('.material-symbols-outlined').textContent = config.icon;
+    }
+    if (dom.pipelineSentimentText) {
+      dom.pipelineSentimentText.textContent = sentiment.toUpperCase();
+    }
   }
 
   function drawSentimentOverlay(result, sourceW, sourceH) {
@@ -457,7 +465,9 @@ window.MeetingAgent = window.MeetingAgent || {};
   }
 
   function handleStatusMessage(data) {
-    dom.statusText.textContent = (data && data.text) || String(data);
+    const text = (data && data.text) || String(data);
+    dom.statusText.textContent = text;
+    if (dom.pipelineStatusText) dom.pipelineStatusText.textContent = text;
   }
 
   window.MeetingAgent.render = {
@@ -467,6 +477,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     updateSentiment,
     drawSentimentOverlay,
     buildSummary,
+    createActionCard,
     handleTranscriptMessage,
     handleInterimMessage,
     handleActionMessage,

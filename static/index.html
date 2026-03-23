@@ -50,17 +50,20 @@
     .pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
     #transcript::-webkit-scrollbar, #actions-feed::-webkit-scrollbar,
     #summary-transcript::-webkit-scrollbar, #summary-actions::-webkit-scrollbar,
-    #doc-widget-content::-webkit-scrollbar, #doc-modal-body::-webkit-scrollbar {
+    #doc-widget-content::-webkit-scrollbar, #doc-modal-body::-webkit-scrollbar,
+    #pipeline-actions::-webkit-scrollbar {
       width: 5px;
     }
     #transcript::-webkit-scrollbar-track, #actions-feed::-webkit-scrollbar-track,
     #summary-transcript::-webkit-scrollbar-track, #summary-actions::-webkit-scrollbar-track,
-    #doc-widget-content::-webkit-scrollbar-track, #doc-modal-body::-webkit-scrollbar-track {
+    #doc-widget-content::-webkit-scrollbar-track, #doc-modal-body::-webkit-scrollbar-track,
+    #pipeline-actions::-webkit-scrollbar-track {
       background: transparent;
     }
     #transcript::-webkit-scrollbar-thumb, #actions-feed::-webkit-scrollbar-thumb,
     #summary-transcript::-webkit-scrollbar-thumb, #summary-actions::-webkit-scrollbar-thumb,
-    #doc-widget-content::-webkit-scrollbar-thumb, #doc-modal-body::-webkit-scrollbar-thumb {
+    #doc-widget-content::-webkit-scrollbar-thumb, #doc-modal-body::-webkit-scrollbar-thumb,
+    #pipeline-actions::-webkit-scrollbar-thumb {
       background: #30363d; border-radius: 3px;
     }
   </style>
@@ -243,6 +246,56 @@
     </section>
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         SCREEN: PIPELINE VISUALIZATION
+         ═══════════════════════════════════════════════════════════════════ -->
+    <section id="screen-pipeline" class="screen flex-col flex-1">
+
+      <!-- Header (matches meeting screen header) -->
+      <header class="flex items-center justify-between h-12 px-4 border-b border-border-muted bg-surface/50 backdrop-blur-md sticky top-0 z-10">
+        <div class="flex items-center gap-3">
+          <h1 class="text-sm font-bold tracking-tight text-white">Meeting Intelligence</h1>
+          <div id="pipeline-status-chip" class="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border-muted bg-bg-dark text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+            <span class="material-symbols-outlined text-[12px]">settings_input_antenna</span>
+            <span id="pipeline-status-text">Connecting...</span>
+          </div>
+          <div id="pipeline-sentiment-pill" class="hidden items-center gap-1.5 px-2 py-0.5 rounded border border-success/50 bg-success/10 text-[10px] text-success font-mono uppercase tracking-wider">
+            <span class="material-symbols-outlined text-[12px]">mood</span>
+            <span id="pipeline-sentiment-text">NEUTRAL</span>
+          </div>
+        </div>
+        <button id="pipeline-stop-btn" class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-danger/10 border border-danger/30 text-danger text-xs font-bold hover:bg-danger/20 transition-colors">
+          <span class="material-symbols-outlined text-sm">stop_circle</span>
+          Stop
+        </button>
+      </header>
+
+      <!-- Mic level bar -->
+      <div class="w-full bg-surface h-[6px] relative">
+        <div id="pipeline-mic-level" class="absolute inset-0 bg-success/60 w-0 transition-all duration-75"></div>
+      </div>
+
+      <!-- Split content: Pipeline Canvas (left 65%) + Action Cards (right 35%) -->
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Left: Pipeline Canvas -->
+        <div class="flex-1 flex items-center justify-center bg-bg-dark p-4 min-h-0 relative">
+          <canvas id="pipeline-canvas" class="w-full h-full"></canvas>
+          <!-- Empty state overlay -->
+          <div id="pipeline-empty-state" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <p class="text-sm text-slate-500 font-medium">Waiting for pipeline activity...</p>
+            <p class="text-xs text-slate-600 mt-1">Start speaking to see data flow through the architecture in real-time.</p>
+          </div>
+        </div>
+        <!-- Right: Action Cards -->
+        <div class="w-80 flex flex-col bg-surface border-l border-border-muted min-h-0">
+          <div class="px-4 py-2 border-b border-border-muted">
+            <h2 class="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Live Actions</h2>
+          </div>
+          <div id="pipeline-actions" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          SCREEN: MEETING SUMMARY
          ═══════════════════════════════════════════════════════════════════ -->
     <section id="screen-summary" class="screen flex-col flex-1">
@@ -296,6 +349,10 @@
         <span class="material-symbols-outlined text-xl">home</span>
         <p class="text-[10px] font-bold">Home</p>
       </a>
+      <a data-nav="pipeline" class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-xl">hub</span>
+        <p class="text-[10px] font-medium">Pipeline</p>
+      </a>
       <a data-nav="meeting" class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer">
         <span class="material-symbols-outlined text-xl">videocam</span>
         <p class="text-[10px] font-medium">Meeting</p>
@@ -332,6 +389,7 @@
   <script src="/static/app/documents.js?v=7"></script>
   <script src="/static/app/media.js?v=7"></script>
   <script src="/static/app/session.js?v=7"></script>
+  <script src="/static/app/pipeline.js?v=7"></script>
   <script src="/static/app.js?v=7"></script>
 </body>
 </html>

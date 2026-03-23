@@ -71,7 +71,7 @@ Plans:
 
 Plans:
 - [x] 01.5-01-PLAN.md — Backend pipeline events + split-screen HTML layout
-- [ ] 01.5-02-PLAN.md — Canvas pipeline renderer with particles, glow, and live stats
+- [x] 01.5-02-PLAN.md — Canvas pipeline renderer with particles, glow, and live stats
 
 ### Phase 2: Demo Video
 **Goal**: <=4min demo video recorded via Loom, leading with the 4-action autonomous moment.
@@ -110,6 +110,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 0. Core Implementation | 6/6 | Complete | 2026-03-22 |
 | 1. Deploy + Auth | 2/2 | Complete | 2026-03-22 |
-| 1.5. Live Architecture Viz | 0/? | Not started | - |
+| 1.5. Live Architecture Viz | 2/2 | Complete   | 2026-03-23 |
 | 2. Demo Video | 0/2 | Not started | - |
 | 3. Submit | 0/1 | Not started | - |

@@ -46,10 +46,10 @@
 ### Visualization (Demo Impact)
 
 - [x] **VIZ-01**: Split-screen layout: live pipeline graph (left) + action output cards (right)
-- [ ] **VIZ-02**: Node graph shows all pipeline stages: Mic → STT → Gemini → Dispatcher → Slack/Calendar/TaskLog, plus Camera → Vision → Gemini
-- [ ] **VIZ-03**: Text understanding (agreement detection) is visually primary; voice tone and facial sentiment shown as informing inputs with thinner edges
-- [ ] **VIZ-04**: Nodes pulse/glow when active; animated particles flow along edges when data passes through
-- [ ] **VIZ-05**: Real-time stats on nodes (transcript count, sentiment score, actions fired)
+- [x] **VIZ-02**: Node graph shows all pipeline stages: Mic → STT → Gemini → Dispatcher → Slack/Calendar/TaskLog, plus Camera → Vision → Gemini
+- [x] **VIZ-03**: Text understanding (agreement detection) is visually primary; voice tone and facial sentiment shown as informing inputs with thinner edges
+- [x] **VIZ-04**: Nodes pulse/glow when active; animated particles flow along edges when data passes through
+- [x] **VIZ-05**: Real-time stats on nodes (transcript count, sentiment score, actions fired)
 - [x] **VIZ-06**: Backend emits pipeline events over WebSocket so frontend can animate in real-time
 
 ### Submission
@@ -102,10 +102,10 @@
 | DEPLOY-01 | Phase 1 | Complete |
 | DEPLOY-02 | Phase 1 | Complete |
 | VIZ-01 | Phase 1.5 | Complete |
-| VIZ-02 | Phase 1.5 | Pending |
-| VIZ-03 | Phase 1.5 | Pending |
-| VIZ-04 | Phase 1.5 | Pending |
-| VIZ-05 | Phase 1.5 | Pending |
+| VIZ-02 | Phase 1.5 | Complete |
+| VIZ-03 | Phase 1.5 | Complete |
+| VIZ-04 | Phase 1.5 | Complete |
+| VIZ-05 | Phase 1.5 | Complete |
 | VIZ-06 | Phase 1.5 | Complete |
 | SUBMIT-01 | Phase 2 | Pending |
 | SUBMIT-02 | Phase 2 | Complete |

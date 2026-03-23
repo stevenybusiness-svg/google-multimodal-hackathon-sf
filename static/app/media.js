@@ -189,7 +189,11 @@ window.MeetingAgent = window.MeetingAgent || {};
     state.processor.onaudioprocess = (event) => {
       const floats = event.inputBuffer.getChannelData(0);
       const rms = computeRms(floats);
-      dom.micLevel.style.width = `${Math.min(rms * 400, 100).toFixed(1)}%`;
+      var micWidth = `${Math.min(rms * 400, 100).toFixed(1)}%`;
+      dom.micLevel.style.width = micWidth;
+      if (dom.pipelineMicLevel) {
+        dom.pipelineMicLevel.style.width = micWidth;
+      }
       if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         try {
           state.ws.send(float32ToInt16(floats).buffer);

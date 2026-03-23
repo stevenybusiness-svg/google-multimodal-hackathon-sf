@@ -79,6 +79,9 @@ window.MeetingAgent = window.MeetingAgent || {};
     state.active = true;
     state.starting = false;
     dom.startBtn.disabled = false;
+    if (window.MeetingAgent.pipeline) {
+      window.MeetingAgent.pipeline.startAnimation();
+    }
     await documents.loadDocumentWidget();
   }
 
@@ -86,6 +89,9 @@ window.MeetingAgent = window.MeetingAgent || {};
     const wasActive = state.active;
     state.active = false;
     state.starting = false;
+    if (window.MeetingAgent.pipeline) {
+      window.MeetingAgent.pipeline.stopAnimation();
+    }
 
     if (!wasActive) {
       media.cleanupResources();

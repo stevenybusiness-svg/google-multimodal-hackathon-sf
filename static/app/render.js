@@ -20,6 +20,10 @@ window.MeetingAgent = window.MeetingAgent || {};
         label.classList.toggle('font-medium', !isActive);
       }
     });
+    // Force canvas resize when showing pipeline screen (ResizeObserver will catch it)
+    if (name === 'pipeline' && window.MeetingAgent.pipeline && window.MeetingAgent.pipeline.startAnimation) {
+      window.dispatchEvent(new Event('resize'));
+    }
   }
 
   function setStartError(message) {

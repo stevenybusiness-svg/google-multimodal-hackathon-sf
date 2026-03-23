@@ -20,10 +20,6 @@ window.MeetingAgent = window.MeetingAgent || {};
         label.classList.toggle('font-medium', !isActive);
       }
     });
-    // Force canvas resize when showing pipeline screen (ResizeObserver will catch it)
-    if (name === 'pipeline' && window.MeetingAgent.pipeline && window.MeetingAgent.pipeline.startAnimation) {
-      window.dispatchEvent(new Event('resize'));
-    }
   }
 
   function setStartError(message) {
@@ -64,14 +60,6 @@ window.MeetingAgent = window.MeetingAgent || {};
     ].join(' ');
     dom.sentimentPill.querySelector('.material-symbols-outlined').textContent = config.icon;
     dom.sentimentText.textContent = sentiment.toUpperCase();
-    if (dom.pipelineSentimentPill) {
-      dom.pipelineSentimentPill.classList.remove('hidden');
-      dom.pipelineSentimentPill.className = dom.sentimentPill.className;
-      dom.pipelineSentimentPill.querySelector('.material-symbols-outlined').textContent = config.icon;
-    }
-    if (dom.pipelineSentimentText) {
-      dom.pipelineSentimentText.textContent = sentiment.toUpperCase();
-    }
   }
 
   function drawSentimentOverlay(result, sourceW, sourceH) {
@@ -471,7 +459,6 @@ window.MeetingAgent = window.MeetingAgent || {};
   function handleStatusMessage(data) {
     const text = (data && data.text) || String(data);
     dom.statusText.textContent = text;
-    if (dom.pipelineStatusText) dom.pipelineStatusText.textContent = text;
   }
 
   window.MeetingAgent.render = {

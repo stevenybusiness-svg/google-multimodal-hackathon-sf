@@ -191,9 +191,6 @@ window.MeetingAgent = window.MeetingAgent || {};
       const rms = computeRms(floats);
       var micWidth = `${Math.min(rms * 400, 100).toFixed(1)}%`;
       dom.micLevel.style.width = micWidth;
-      if (dom.pipelineMicLevel) {
-        dom.pipelineMicLevel.style.width = micWidth;
-      }
       if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         try {
           state.ws.send(float32ToInt16(floats).buffer);

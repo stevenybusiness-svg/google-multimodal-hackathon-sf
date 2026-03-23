@@ -27,9 +27,6 @@ window.MeetingAgent = window.MeetingAgent || {};
     if (message.type === 'interim') render.handleInterimMessage(message.data);
     if (message.type === 'action') {
       render.handleActionMessage(message.data);
-      if (dom.pipelineActions) {
-        render.createActionCard(message.data, dom.pipelineActions);
-      }
     }
     if (message.type === 'sentiment') render.handleSentimentMessage(message.data);
     if (message.type === 'status') render.handleStatusMessage(message.data);
@@ -42,7 +39,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     render.setStartError('');
     render.resetMeetingState();
     ensureSessionId();
-    render.showScreen('pipeline');
+    render.showScreen('meeting');
     dom.statusText.textContent = 'Connecting...';
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -109,7 +106,13 @@ window.MeetingAgent = window.MeetingAgent || {};
     }
 
     render.buildSummary();
+    // Move pipeline canvas into summary screen so it stays visible after meeting ends
+    const summaryPanel = document.getElementById('summary-pipeline-panel');
+    if (summaryPanel && dom.pipelineCanvas) {
+      summaryPanel.appendChild(dom.pipelineCanvas);
+    }
     render.showScreen('summary');
+    if (window.MeetingAgent.pipeline) window.MeetingAgent.pipeline.startAnimation();
   }
 
   function init() {
@@ -138,10 +141,12 @@ window.MeetingAgent = window.MeetingAgent || {};
     });
 
     dom.stopBtn.addEventListener('click', () => stopMeeting('user'));
-    if (dom.pipelineStopBtn) {
-      dom.pipelineStopBtn.addEventListener('click', () => stopMeeting('user'));
-    }
     dom.newMeetingBtn.addEventListener('click', () => {
+      // Move canvas back to meeting screen for the next meeting
+      const meetingPanel = document.getElementById('meeting-pipeline-panel');
+      if (meetingPanel && dom.pipelineCanvas) {
+        meetingPanel.appendChild(dom.pipelineCanvas);
+      }
       closeWs();
       resetSessionId();
       render.showScreen('home');

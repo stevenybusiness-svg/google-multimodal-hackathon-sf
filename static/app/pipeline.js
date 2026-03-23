@@ -327,10 +327,6 @@ window.MeetingAgent = window.MeetingAgent || {};
     var mapping = EVENT_MAP[data.event];
     if (!mapping) return;
 
-    // Hide empty state on first event
-    var emptyState = dom.pipelineEmptyState;
-    if (emptyState) emptyState.style.display = 'none';
-
     // Activate nodes
     for (var i = 0; i < mapping.nodes.length; i++) {
       var entry = mapping.nodes[i];

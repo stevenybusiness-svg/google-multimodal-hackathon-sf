@@ -29,6 +29,7 @@ Three autonomous actions fire in ~5 seconds from live voice + camera input — n
 - [ ] Cloud Run deploy with public URL (Phase 1)
 - [ ] Demo video ≤4min, opens with 3-action moment (Phase 2)
 - [ ] Hackathon submission submitted at luma.com/multimodalhack (Phase 3)
+- ✓ Voice-driven GCP infrastructure provisioning (Terraform HCL generation + dispatch) — Phase 2 (2026-03-25)
 
 ### Out of Scope
 
@@ -67,4 +68,4 @@ Three autonomous actions fire in ~5 seconds from live voice + camera input — n
 | Gemini stack (not Claude) | Google DeepMind is lead sponsor; strategic alignment with judges | ✓ Good |
 
 ---
-*Last updated: 2026-03-22 after GSD adoption + hackathon retarget*
+*Last updated: 2026-03-25 — Phase 02 complete (voice-driven GCP infra provisioning)*

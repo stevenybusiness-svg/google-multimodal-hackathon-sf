@@ -114,7 +114,7 @@ Plans:
 | 1.5. Live Architecture Viz | 2/2 | Complete   | 2002-02-23 |
 | 2. Demo Video | 0/2 | Not started | - |
 | 2. Submit | 0/1 | Not started | - |
-| 2. Voice-Driven GCP Infra | 0/3 | Planned | - |
+| 2. Voice-Driven GCP Infra | 3/3 | Complete | 2026-03-25 |
 
 ### Phase 2: Voice-Driven GCP Infrastructure Provisioning
 
@@ -130,6 +130,6 @@ Plans:
 **Plans:** 3 plans (2 waves)
 
 Plans:
-- [ ] 02-01-PLAN.md — Backend contracts, understanding prompt, HCL generation + terraform helpers
-- [ ] 02-02-PLAN.md — Terraform directory, Dockerfile install, UI action card support
-- [ ] 02-03-PLAN.md — Wire dispatch in main.py + TF_VAR_project_id integration
+- [x] 02-01-PLAN.md — Backend contracts, understanding prompt, HCL generation + terraform helpers
+- [x] 02-02-PLAN.md — Terraform directory, Dockerfile install, UI action card support
+- [x] 02-03-PLAN.md — Wire dispatch in main.py + TF_VAR_project_id integration

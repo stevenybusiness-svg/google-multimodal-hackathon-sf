@@ -88,7 +88,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Pre-flight checks (git secrets audit + live service verification)
-- [ ] 02-02-PLAN.md — Record demo video in Loom + capture shareable URL
+- [x] 02-02-PLAN.md — Record demo video in Loom + capture shareable URL
 
 ### Phase 2: Submit
 **Goal**: Hackathon submission complete before March 28, 2026 9:30 AM PST.
@@ -103,7 +103,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 02-01: Final submission checklist + submit
+- [x] 02-01: Final submission checklist + submit
 
 ## Progress
 

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Hackathon Submission
-status: Ready to plan
-stopped_at: Completed 01.5-02-PLAN.md
-last_updated: "2026-03-25T16:35:53.015Z"
+status: Milestone complete
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-25T19:52:00.818Z"
 progress:
   total_phases: 2
-  completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
 ---
 
 # Project State
@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-22)
 
 **Core value:** Three autonomous actions fire in ~5s from live voice + camera — no human gate.
-**Current focus:** Phase 01.5 — live-architecture-visualization
+**Current focus:** Phase 02 — voice-driven-gcp-infrastructure-provisioning
 
 ## Current Position
 
@@ -43,6 +43,9 @@ Plan: Not started
 | Phase 02-demo-video P01 | 2 | 2 tasks | 1 files |
 | Phase 01.5 P01 | 303s | 2 tasks | 8 files |
 | Phase 01.5 P02 | 131 | 2 tasks | 4 files |
+| Phase 02-voice-driven-gcp-infrastructure-provisioning P02 | 2min | 2 tasks | 5 files |
+| Phase 02 P01 | 4min | 3 tasks | 3 files |
+| Phase 02 P03 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -62,6 +65,14 @@ Plan: Not started
 - [Phase 01.5]: Vision pipeline events bridged via session_state.ws_send for REST-to-WS
 - [Phase 01.5]: Pipeline screen is separate from meeting screen; both coexist via nav
 - [Phase 01.5]: Normalized 0-1 coordinate system for pipeline node positions scales to any canvas size
+- [Phase 02-voice-driven-gcp-infrastructure-provisioning]: Bake terraform init into Docker image to eliminate 30-60s cold start on first apply
+- [Phase 02-voice-driven-gcp-infrastructure-provisioning]: Use TF_VAR_project_id pattern to pass project ID — avoids GOOGLE_PROJECT vs GOOGLE_CLOUD_PROJECT naming confusion
+- [Phase 02-voice-driven-gcp-infrastructure-provisioning]: Orange color scheme for infra badge — visually distinct from slack/calendar/task/document action types
+- [Phase 02]: generate_hcl writes to resources.tf (not main.tf) to keep static provider.tf separate for Docker init baking
+- [Phase 02]: UUID 6-char hex suffix on resource name slug prevents naming collisions across concurrent VM provisioning requests
+- [Phase 02]: asyncio.Lock at module level in infra.py serializes concurrent terraform applies against shared local tfstate
+- [Phase 02]: Infra dispatch uses named _provision_and_report(req) inner function to avoid closure-in-loop variable capture bug
+- [Phase 02]: TF_VAR_project_id set in os.environ before terraform subprocess so child process inherits correct GCP project
 
 ### Roadmap Evolution
 
@@ -78,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T01:20:06.168Z
-Stopped at: Completed 01.5-02-PLAN.md
+Last session: 2026-03-25T19:47:41.424Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

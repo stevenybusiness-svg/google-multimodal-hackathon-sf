@@ -63,14 +63,18 @@ Plan: Not started
 - [Phase 01.5]: Pipeline screen is separate from meeting screen; both coexist via nav
 - [Phase 01.5]: Normalized 0-1 coordinate system for pipeline node positions scales to any canvas size
 
+### Roadmap Evolution
+
+- Phase 03 added: Voice-Driven GCP Infrastructure Provisioning — spoken infra requirements → Terraform HCL generate + apply → real Compute Engine VMs + firewall rules provisioned in GCP autonomously
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-- Hackathon March 28 9:30 AM PST hard deadline — 6 days
-- Phase 2 (demo video) not yet started — record 4-min demo video per ROADMAP script
+- Hackathon March 28 9:30 AM PST hard deadline — 3 days
+- Phase 03 not yet planned — voice-driven GCP infra provisioning (next priority)
 
 ## Session Continuity
 

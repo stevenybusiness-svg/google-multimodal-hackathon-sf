@@ -114,3 +114,13 @@ Plans:
 | 1.5. Live Architecture Viz | 2/2 | Complete   | 2002-03-23 |
 | 2. Demo Video | 0/2 | Not started | - |
 | 2. Submit | 0/1 | Not started | - |
+
+### Phase 3: Voice-Driven GCP Infrastructure Provisioning
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 2
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 3 to break down)

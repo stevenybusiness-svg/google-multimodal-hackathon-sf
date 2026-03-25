@@ -27,6 +27,7 @@ from backend.contracts import (
     make_ws_message,
 )
 from backend.documents import MARKETING_BRIEF, REVISION_MODEL
+from backend.infra import provision_infrastructure
 from backend.understanding import TranscriptBuffer, UNDERSTANDING_MODEL
 from backend.session_state import session_registry
 from backend.vision import analyze_frame
@@ -144,6 +145,20 @@ async def websocket_audio(ws: WebSocket):
                 on_action=_on_action,
             )
             _all_actions.extend(actions)
+
+            # Infrastructure provisioning — fire-and-forget per D-04
+            for infra_req in understanding.get("infrastructure_requests", []):
+                if infra_req.get("sentiment") == "positive":
+                    async def _provision_and_report(req):
+                        result = await provision_infrastructure(req, on_action=_on_action)
+                        if result:
+                            await _on_action(result)
+                    t = asyncio.create_task(_provision_and_report(infra_req))
+                    _bg_tasks.add(t)
+                    t.add_done_callback(_bg_tasks.discard)
+                else:
+                    logger.info("[%s] Infra request blocked (sentiment=%s): %s",
+                                sid, infra_req.get("sentiment"), infra_req.get("name", "?"))
         except Exception as exc:
             logger.error("[%s] _dispatch failed: %s", sid, exc)
 
@@ -165,7 +180,7 @@ async def websocket_audio(ws: WebSocket):
         async def _handle_understanding(understanding: UnderstandingResult) -> None:
             await send(make_ws_message("pipeline", {"event": "understanding_result", "stats": {
                 "sentiment": understanding.get("sentiment", "neutral"),
-                "actions": sum(len(understanding.get(k, [])) for k in ("commitments", "agreements", "meeting_requests", "document_revisions"))
+                "actions": sum(len(understanding.get(k, [])) for k in ("commitments", "agreements", "meeting_requests", "document_revisions", "infrastructure_requests"))
             }}))
             logger.info("[%s] Understanding result: %s", sid, json.dumps(understanding)[:300])
             sentiment_payload: SentimentPayload = {"value": understanding.get("sentiment", "neutral")}

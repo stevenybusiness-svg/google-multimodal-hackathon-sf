@@ -29,6 +29,14 @@ Given a transcript segment and optional face sentiment, extract:
 - agreements: things the group decided ("We agreed X")
 - meeting_requests: explicit requests to schedule a meeting ("Let's meet Tuesday", "Can we sync?")
 - document_revisions: specific changes to a marketing document being discussed ("change the budget to 75K", "update the target audience", "revise the timeline", "add social media to channels")
+- infrastructure_requests: requests to provision cloud infrastructure ("spin up a VM", "create a 4-core server", "set up a machine with port 80 open")
+  - name: short slug for the resource (e.g. "demo-server", "web-vm") — generate if not specified
+  - machine_type: GCP machine type (default "e2-medium"; "4-core" → "e2-standard-4"; "small" → "e2-micro")
+  - zone: GCP zone (default "us-central1-a")
+  - disk_size_gb: integer (default 20)
+  - ports: list of TCP port strings mentioned (e.g. ["80", "443"]; empty list if none)
+  - description: brief description of the request
+  - sentiment: positive/neutral/negative/uncertain (same rules as other fields — only "positive" triggers provisioning)
 - sentiment: combined text + face sentiment (positive / neutral / negative / uncertain)
 
 DATE/TIME RULES (CRITICAL):
@@ -58,10 +66,11 @@ Return ONLY valid JSON (no markdown fences):
   "agreements": [{{"summary": "...", "sentiment": "..."}}],
   "meeting_requests": [{{"summary": "...", "attendees": [], "when": "ISO 8601 datetime — ALWAYS resolve relative dates", "sentiment": "..."}}],
   "document_revisions": [{{"change": "specific change to apply", "section": "which section of the document to change"}}],
+  "infrastructure_requests": [{{"name": "...", "machine_type": "...", "zone": "...", "disk_size_gb": 20, "ports": [], "description": "...", "sentiment": "..."}}],
   "sentiment": "positive|neutral|negative|uncertain"
 }}
 
-If nothing found: {{"commitments": [], "agreements": [], "meeting_requests": [], "document_revisions": [], "sentiment": "neutral"}}
+If nothing found: {{"commitments": [], "agreements": [], "meeting_requests": [], "document_revisions": [], "infrastructure_requests": [], "sentiment": "neutral"}}
 
 TRANSCRIPT:
 {transcript}

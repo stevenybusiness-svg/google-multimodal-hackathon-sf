@@ -70,7 +70,7 @@ window.MeetingAgent = window.MeetingAgent || {};
 
   const contracts = {
     wsTypes: new Set(['transcript', 'interim', 'status', 'sentiment', 'action', 'done', 'pipeline']),
-    actionTypes: new Set(['slack', 'calendar', 'task', 'document']),
+    actionTypes: new Set(['slack', 'calendar', 'task', 'document', 'infra']),
   };
 
   const sentimentConfig = {
@@ -98,6 +98,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     task: { label: 'Task', colorClasses: 'bg-purple-500/15 text-purple-400 border-purple-500/30' },
     document: { label: 'Document', colorClasses: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
     email: { label: 'Email Summary', colorClasses: 'bg-teal-500/15 text-teal-400 border-teal-500/30' },
+    infra: { label: 'Infrastructure', colorClasses: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
   };
 
   function timeStr() {

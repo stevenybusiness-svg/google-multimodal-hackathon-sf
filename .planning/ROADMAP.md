@@ -114,13 +114,22 @@ Plans:
 | 1.5. Live Architecture Viz | 2/2 | Complete   | 2002-02-23 |
 | 2. Demo Video | 0/2 | Not started | - |
 | 2. Submit | 0/1 | Not started | - |
+| 2. Voice-Driven GCP Infra | 0/3 | Planned | - |
 
 ### Phase 2: Voice-Driven GCP Infrastructure Provisioning
 
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 2
-**Plans:** 0 plans
+**Goal:** User speaks infrastructure requirements during a meeting; Gemini extracts structured fields; Python generates Terraform HCL; terraform apply provisions real Compute Engine VMs + firewall rules in GCP autonomously.
+**Requirements**: INFRA-01, INFRA-02, INFRA-03, INFRA-04, INFRA-05, INFRA-06
+**Depends on:** Phase 0 (core pipelines)
+**Success Criteria**:
+  1. Spoken VM request triggers infrastructure_requests extraction via Gemini
+  2. Programmatic HCL generation produces valid google_compute_instance + google_compute_firewall
+  3. terraform apply runs via asyncio subprocess with lock serialization
+  4. Infra action cards appear in UI with pending/success/failure status
+  5. Only positive-sentiment requests trigger provisioning
+**Plans:** 3 plans (2 waves)
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 3 to break down)
+- [ ] 02-01-PLAN.md — Backend contracts, understanding prompt, HCL generation + terraform helpers
+- [ ] 02-02-PLAN.md — Terraform directory, Dockerfile install, UI action card support
+- [ ] 02-03-PLAN.md — Wire dispatch in main.py + TF_VAR_project_id integration

@@ -147,6 +147,9 @@ window.MeetingAgent = window.MeetingAgent || {};
     if (type === 'document' && action.payload) {
       const payload = action.payload;
       payloadText = `📝 ${payload.title || payload.filename || 'Document'} — ${payload.changes || 'Updated'}`;
+    } else if (type === 'infra' && action.payload) {
+      const p = action.payload;
+      payloadText = `VM: ${p.name || 'unnamed'} (${p.machine_type || 'e2-medium'}, ${p.zone || 'us-central1-a'}) — ${p.status || 'pending'}`;
     } else {
       payloadText = action.payload
         ? (typeof action.payload === 'object'
@@ -284,7 +287,7 @@ window.MeetingAgent = window.MeetingAgent || {};
       iconBox.className = 'size-8 rounded bg-slate-800 flex items-center justify-center';
       const icon = document.createElement('span');
       icon.className = 'material-symbols-outlined text-sm text-slate-400';
-      icon.textContent = entry.type === 'slack' ? 'tag' : entry.type === 'calendar' ? 'event' : entry.type === 'document' ? 'description' : entry.type === 'email' ? 'mail' : 'task_alt';
+      icon.textContent = entry.type === 'slack' ? 'tag' : entry.type === 'calendar' ? 'event' : entry.type === 'document' ? 'description' : entry.type === 'email' ? 'mail' : entry.type === 'infra' ? 'cloud' : 'task_alt';
       iconBox.appendChild(icon);
       const label = document.createElement('p');
       label.className = 'text-xs font-bold';

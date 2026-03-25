@@ -18,7 +18,7 @@ SentimentValue = Literal[
     "surprise",
 ]
 ActionStatus = Literal["sent", "failed", "skipped", "logged", "blocked"]
-ActionType = Literal["slack", "calendar", "task", "document", "email"]
+ActionType = Literal["slack", "calendar", "task", "document", "email", "infra"]
 WsMessageType = Literal["transcript", "interim", "status", "sentiment", "action", "done", "pipeline"]
 
 UNDERSTANDING_KEYS = (
@@ -26,6 +26,7 @@ UNDERSTANDING_KEYS = (
     "agreements",
     "meeting_requests",
     "document_revisions",
+    "infrastructure_requests",
 )
 
 
@@ -54,11 +55,22 @@ class DocumentRevision(TypedDict, total=False):
     section: str
 
 
+class InfraRequest(TypedDict, total=False):
+    name: str                # slug for resource, e.g. "demo-server"
+    machine_type: str        # e.g. "e2-medium", "n2-standard-4"
+    zone: str                # e.g. "us-central1-a"
+    disk_size_gb: int        # default 20
+    ports: list[str]         # e.g. ["80", "443", "22"]
+    description: str
+    sentiment: str           # gate: only provision on "positive"
+
+
 class UnderstandingResult(TypedDict):
     commitments: list[Commitment]
     agreements: list[Agreement]
     meeting_requests: list[MeetingRequest]
     document_revisions: list[DocumentRevision]
+    infrastructure_requests: list[InfraRequest]
     sentiment: str
 
 
@@ -93,6 +105,7 @@ def empty_understanding() -> UnderstandingResult:
         "agreements": [],
         "meeting_requests": [],
         "document_revisions": [],
+        "infrastructure_requests": [],
         "sentiment": "neutral",
     }
 

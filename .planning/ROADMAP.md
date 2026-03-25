@@ -2,7 +2,7 @@
 
 ## Overview
 
-All core code is done (Phase 0 complete). Remaining work is deploy, auth, demo, and submission for the Multimodal Frontier Hackathon on March 28, 2026. Phase 1 runs two tasks in parallel (Calendar OAuth2 + Cloud Run deploy). Phase 2 records the demo video once the live deploy is confirmed. Phase 3 submits.
+All core code is done (Phase 0 complete). Remaining work is deploy, auth, demo, and submission for the Multimodal Frontier Hackathon on March 28, 2026. Phase 1 runs two tasks in parallel (Calendar OAuth2 + Cloud Run deploy). Phase 2 records the demo video once the live deploy is confirmed. Phase 2 submits.
 
 ## Milestones
 
@@ -90,7 +90,7 @@ Plans:
 - [x] 02-01-PLAN.md — Pre-flight checks (git secrets audit + live service verification)
 - [ ] 02-02-PLAN.md — Record demo video in Loom + capture shareable URL
 
-### Phase 3: Submit
+### Phase 2: Submit
 **Goal**: Hackathon submission complete before March 28, 2026 9:30 AM PST.
 **Depends on**: Phase 2
 **Requirements**: SUBMIT-03
@@ -103,14 +103,14 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 03-01: Final submission checklist + submit
+- [ ] 02-01: Final submission checklist + submit
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Core Implementation | 6/6 | Complete | 2026-03-22 |
-| 1. Deploy + Auth | 2/2 | Complete | 2026-03-22 |
-| 1.5. Live Architecture Viz | 2/2 | Complete   | 2026-03-23 |
+| 0. Core Implementation | 6/6 | Complete | 2002-03-22 |
+| 1. Deploy + Auth | 2/2 | Complete | 2002-03-22 |
+| 1.5. Live Architecture Viz | 2/2 | Complete   | 2002-03-23 |
 | 2. Demo Video | 0/2 | Not started | - |
-| 3. Submit | 0/1 | Not started | - |
+| 2. Submit | 0/1 | Not started | - |

@@ -119,6 +119,11 @@ async def provision_infrastructure(req: InfraRequest, on_action=None) -> dict:
         if on_action:
             await on_action(pending_card)
 
+        # Set TF_VAR_project_id so terraform provider.tf picks up the project
+        os.environ["TF_VAR_project_id"] = project
+        logger.info("Provisioning infra: name=%s, project=%s, terraform_dir=%s",
+                    req.get("name", "?"), project, TERRAFORM_DIR)
+
         async with _tf_lock:
             resources_tf = os.path.join(TERRAFORM_DIR, "resources.tf")
             logger.info("Writing HCL to %s (resource: %s)", resources_tf, name_slug)

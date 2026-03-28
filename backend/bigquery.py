@@ -39,7 +39,7 @@ def bq_available() -> bool:
     return bool(os.getenv("GOOGLE_CLOUD_PROJECT"))
 
 
-NL_TO_SQL_MODEL = "gemini-2.0-flash"
+NL_TO_SQL_MODEL = "gemini-3-flash-preview"
 DATASET_ID = "marketing_data"
 TABLE_ID = "campaigns"
 

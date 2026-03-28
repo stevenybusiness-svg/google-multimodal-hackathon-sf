@@ -16,7 +16,10 @@ import os
 from datetime import datetime, timezone
 from typing import Optional
 
-from unkey_py import Unkey
+try:
+    from unkey_py import Unkey  # v0.x (pip install unkey.py on Python 3.9)
+except ImportError:
+    from unkey.py import Unkey  # v3.x (pip install unkey-py on Python 3.12)
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +45,10 @@ def _client() -> Unkey | None:
         return _unkey
     if not UNKEY_ROOT_KEY:
         return None
-    _unkey = Unkey(bearer_auth=UNKEY_ROOT_KEY)
+    try:
+        _unkey = Unkey(bearer_auth=UNKEY_ROOT_KEY)  # v0.x
+    except TypeError:
+        _unkey = Unkey(root_key=UNKEY_ROOT_KEY)  # v3.x
     return _unkey
 
 

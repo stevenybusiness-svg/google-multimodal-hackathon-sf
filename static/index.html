@@ -48,25 +48,60 @@
       50% { opacity: 0.4; }
     }
     .pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+
+    /* Sentiment border/glow on pipeline panel and webcam video */
+    .sentiment-border {
+      transition: border-color 0.5s ease, box-shadow 0.5s ease;
+    }
+    .sentiment-border.sentiment-positive {
+      border-color: #3fb950 !important;
+      box-shadow: inset 0 0 20px rgba(63, 185, 80, 0.15), 0 0 15px rgba(63, 185, 80, 0.2);
+    }
+    .sentiment-border.sentiment-negative {
+      border-color: #f85149 !important;
+      box-shadow: inset 0 0 20px rgba(248, 81, 73, 0.15), 0 0 15px rgba(248, 81, 73, 0.2);
+    }
+    .sentiment-border.sentiment-uncertain {
+      border-color: #e3b341 !important;
+      box-shadow: inset 0 0 20px rgba(227, 179, 65, 0.15), 0 0 15px rgba(227, 179, 65, 0.2);
+    }
+    .sentiment-border.sentiment-neutral {
+      border-color: #30363d !important;
+      box-shadow: none;
+    }
+    @keyframes sentiment-glow-red {
+      0%, 100% { box-shadow: inset 0 0 20px rgba(248, 81, 73, 0.15), 0 0 15px rgba(248, 81, 73, 0.2); }
+      50% { box-shadow: inset 0 0 30px rgba(248, 81, 73, 0.25), 0 0 25px rgba(248, 81, 73, 0.35); }
+    }
+    @keyframes sentiment-glow-amber {
+      0%, 100% { box-shadow: inset 0 0 20px rgba(227, 179, 65, 0.15), 0 0 15px rgba(227, 179, 65, 0.2); }
+      50% { box-shadow: inset 0 0 30px rgba(227, 179, 65, 0.25), 0 0 25px rgba(227, 179, 65, 0.35); }
+    }
+    .sentiment-border.sentiment-negative {
+      animation: sentiment-glow-red 2s ease-in-out infinite;
+    }
+    .sentiment-border.sentiment-uncertain {
+      animation: sentiment-glow-amber 2s ease-in-out infinite;
+    }
     #transcript::-webkit-scrollbar, #actions-feed::-webkit-scrollbar,
     #summary-transcript::-webkit-scrollbar, #summary-actions::-webkit-scrollbar,
     #doc-widget-content::-webkit-scrollbar, #doc-modal-body::-webkit-scrollbar,
     #pipeline-actions::-webkit-scrollbar,
-    #sponsor-audit-list::-webkit-scrollbar {
+    #sponsor-kb-body::-webkit-scrollbar {
       width: 5px;
     }
     #transcript::-webkit-scrollbar-track, #actions-feed::-webkit-scrollbar-track,
     #summary-transcript::-webkit-scrollbar-track, #summary-actions::-webkit-scrollbar-track,
     #doc-widget-content::-webkit-scrollbar-track, #doc-modal-body::-webkit-scrollbar-track,
     #pipeline-actions::-webkit-scrollbar-track,
-    #sponsor-audit-list::-webkit-scrollbar-track {
+    #sponsor-kb-body::-webkit-scrollbar-track {
       background: transparent;
     }
     #transcript::-webkit-scrollbar-thumb, #actions-feed::-webkit-scrollbar-thumb,
     #summary-transcript::-webkit-scrollbar-thumb, #summary-actions::-webkit-scrollbar-thumb,
     #doc-widget-content::-webkit-scrollbar-thumb, #doc-modal-body::-webkit-scrollbar-thumb,
     #pipeline-actions::-webkit-scrollbar-thumb,
-    #sponsor-audit-list::-webkit-scrollbar-thumb {
+    #sponsor-kb-body::-webkit-scrollbar-thumb {
       background: #30363d; border-radius: 3px;
     }
   </style>
@@ -210,10 +245,13 @@
             <span class="material-symbols-outlined text-[12px]">mood</span>
             <span id="sentiment-text">NEUTRAL</span>
           </div>
-          <!-- DigitalOcean Memory badge -->
+          <!-- DigitalOcean Knowledge Base badge -->
           <div id="sponsor-memory-badge" class="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border-muted bg-bg-dark text-[10px] font-mono uppercase tracking-wider">
             <span id="sponsor-memory-dot" class="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-slate-500"></span>
-            <span id="sponsor-memory-label" class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Meeting Memory: Offline</span>
+            <span id="sponsor-memory-label" class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Knowledge Base: Offline</span>
+          </div>
+          <div id="sponsor-memory-flash" class="hidden items-center gap-1.5 px-2 py-0.5 rounded border border-success/50 bg-success/10 text-[10px] text-success font-mono uppercase tracking-wider">
+            Meeting archived to Knowledge Base &#x2713;
           </div>
         </div>
         <button id="stop-btn" class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-danger/10 border border-danger/30 text-danger text-xs font-bold hover:bg-danger/20 transition-colors">
@@ -231,7 +269,7 @@
       <div class="flex flex-1 overflow-hidden">
 
         <!-- Pipeline canvas panel -->
-        <div id="meeting-pipeline-panel" class="w-[320px] flex-shrink-0 flex items-center justify-center bg-bg-dark relative border-r border-border-muted">
+        <div id="meeting-pipeline-panel" class="w-[320px] flex-shrink-0 flex items-center justify-center bg-bg-dark relative border-r border-border-muted sentiment-border border-2">
           <canvas id="pipeline-canvas" class="w-full h-full"></canvas>
         </div>
 
@@ -277,26 +315,32 @@
 
         <div class="flex divide-x divide-border-muted" style="max-height: 220px;">
 
-          <!-- Panel 1: Unkey Audit Trail -->
-          <div id="sponsor-audit-panel" class="flex-1 flex flex-col min-w-0">
-            <button id="sponsor-audit-toggle" class="flex items-center justify-between px-3 py-2 w-full text-left hover:bg-bg-dark/30 transition-colors group">
+          <!-- Panel 1: Knowledge Base (DigitalOcean) -->
+          <div id="sponsor-kb-panel" class="flex-1 flex flex-col min-w-0">
+            <button id="sponsor-kb-toggle" class="flex items-center justify-between px-3 py-2 w-full text-left hover:bg-bg-dark/30 transition-colors group">
               <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-sm text-amber-400">shield</span>
-                <span class="text-[10px] font-bold text-white uppercase tracking-wider">Audit Trail</span>
-                <span class="text-[9px] px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-400 font-mono uppercase font-bold">Unkey</span>
+                <span class="material-symbols-outlined text-sm text-primary">database</span>
+                <span class="text-[10px] font-bold text-white uppercase tracking-wider">Knowledge Base</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary font-mono uppercase font-bold">DigitalOcean</span>
               </div>
-              <span id="sponsor-audit-chevron" class="material-symbols-outlined text-sm text-slate-400 group-hover:text-white transition-colors">expand_less</span>
+              <span id="sponsor-kb-chevron" class="material-symbols-outlined text-sm text-slate-400 group-hover:text-white transition-colors">expand_less</span>
             </button>
-            <div id="sponsor-audit-body" class="flex flex-col flex-1 min-h-0 px-3 pb-2">
-              <!-- Kill switch -->
-              <button id="sponsor-kill-btn" class="w-full h-9 bg-danger hover:bg-danger/90 text-white text-xs font-bold uppercase tracking-wider rounded-lg border border-danger/50 transition-colors flex items-center justify-center gap-1.5 mb-2 flex-shrink-0">
-                <span class="material-symbols-outlined text-sm">dangerous</span>
-                KILL SWITCH
-              </button>
-              <!-- Audit counter -->
-              <p id="sponsor-audit-counter" class="text-[10px] text-slate-500 mb-1.5 flex-shrink-0">0 actions audited this session</p>
-              <!-- Audit entries list -->
-              <div id="sponsor-audit-list" class="flex-1 overflow-y-auto space-y-1.5 min-h-0"></div>
+            <div id="sponsor-kb-body" class="flex flex-col flex-1 min-h-0 px-3 pb-2">
+              <!-- KB status -->
+              <div class="flex items-center gap-2 mb-2">
+                <span id="sponsor-kb-dot" class="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-slate-500"></span>
+                <span id="sponsor-kb-status" class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Offline</span>
+              </div>
+              <!-- Meetings archived counter -->
+              <p id="sponsor-kb-counter" class="text-[10px] text-slate-500 mb-2 flex-shrink-0">0 meetings archived</p>
+              <!-- Open Chat button + assistant-ui badge -->
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <a href="/chat" id="sponsor-kb-chat-btn" class="flex-1 h-9 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-lg border border-primary/30 transition-colors flex items-center justify-center gap-1.5">
+                  <span class="material-symbols-outlined text-sm">chat</span>
+                  Open Chat &rarr;
+                </a>
+                <span class="text-[9px] px-1.5 py-0.5 rounded border border-slate-500/30 bg-slate-500/10 text-slate-400 font-mono uppercase font-bold flex-shrink-0">assistant-ui</span>
+              </div>
             </div>
           </div>
 
@@ -406,6 +450,10 @@
       <a data-nav="summary" class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer">
         <span class="material-symbols-outlined text-xl">checklist</span>
         <p class="text-[10px] font-medium">Actions</p>
+      </a>
+      <a href="/chat" class="flex flex-1 flex-col items-center justify-end gap-1 text-slate-400 hover:text-white transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-xl">forum</span>
+        <p class="text-[10px] font-medium">Knowledge</p>
       </a>
     </nav>
   </div>

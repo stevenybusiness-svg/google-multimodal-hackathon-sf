@@ -47,6 +47,42 @@ window.MeetingAgent = window.MeetingAgent || {};
     dom.processingInd.classList.add('hidden');
     dom.processingInd.classList.remove('flex');
     state.meetingStartTime = new Date();
+    // Reset sentiment borders to neutral
+    applySentimentBorders('neutral');
+  }
+
+  // Map raw sentiment values to one of our four visual categories
+  function sentimentCategory(sentiment) {
+    if (sentiment === 'positive' || sentiment === 'happiness') return 'positive';
+    if (sentiment === 'negative' || sentiment === 'anger' || sentiment === 'sadness') return 'negative';
+    if (sentiment === 'uncertain' || sentiment === 'surprise') return 'uncertain';
+    return 'neutral';
+  }
+
+  function applySentimentBorders(sentiment) {
+    const category = sentimentCategory(sentiment);
+    const classes = ['sentiment-positive', 'sentiment-negative', 'sentiment-uncertain', 'sentiment-neutral'];
+
+    // Pipeline panel
+    const pipelinePanel = document.getElementById('meeting-pipeline-panel');
+    if (pipelinePanel) {
+      for (const cls of classes) pipelinePanel.classList.remove(cls);
+      pipelinePanel.classList.add('sentiment-' + category);
+    }
+
+    // Webcam video element (fixed position, bottom-right)
+    if (dom.visionVideo && dom.visionVideo.style.display !== 'none' && !dom.visionVideo.classList.contains('hidden')) {
+      const colorMap = { positive: '#3fb950', negative: '#f85149', uncertain: '#e3b341', neutral: '#30363d' };
+      const shadowMap = {
+        positive: '0 0 15px rgba(63,185,80,0.4), 0 4px 16px rgba(0,0,0,0.6)',
+        negative: '0 0 15px rgba(248,81,73,0.4), 0 4px 16px rgba(0,0,0,0.6)',
+        uncertain: '0 0 15px rgba(227,179,65,0.4), 0 4px 16px rgba(0,0,0,0.6)',
+        neutral: '0 4px 16px rgba(0,0,0,0.6)',
+      };
+      dom.visionVideo.style.borderColor = colorMap[category];
+      dom.visionVideo.style.boxShadow = shadowMap[category];
+      dom.visionVideo.style.transition = 'border-color 0.5s ease, box-shadow 0.5s ease';
+    }
   }
 
   function updateSentiment(value) {
@@ -60,6 +96,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     ].join(' ');
     dom.sentimentPill.querySelector('.material-symbols-outlined').textContent = config.icon;
     dom.sentimentText.textContent = sentiment.toUpperCase();
+    applySentimentBorders(sentiment);
   }
 
   function drawSentimentOverlay(result, sourceW, sourceH) {

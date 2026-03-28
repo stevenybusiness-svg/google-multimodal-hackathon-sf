@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting Knowledge Base — Chat</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary":      "#57abff",
+            "success":      "#3fb950",
+            "danger":       "#f85149",
+            "warning":      "#e3b341",
+            "bg-dark":      "#0d1117",
+            "surface":      "#161b22",
+            "border-muted": "#30363d",
+            "text-main":    "#c9d1d9",
+            "text-muted":   "#8b949e",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg-enter { animation: fadeInUp 0.2s ease-out; }
+    @keyframes dotPulse {
+      0%, 80%, 100% { opacity: 0.3; }
+      40% { opacity: 1; }
+    }
+    .thinking-dot:nth-child(1) { animation: dotPulse 1.4s infinite 0s; }
+    .thinking-dot:nth-child(2) { animation: dotPulse 1.4s infinite 0.2s; }
+    .thinking-dot:nth-child(3) { animation: dotPulse 1.4s infinite 0.4s; }
+    #chat-thread::-webkit-scrollbar { width: 5px; }
+    #chat-thread::-webkit-scrollbar-track { background: transparent; }
+    #chat-thread::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-bg-dark text-text-main font-display antialiased">
+
+  <div class="flex flex-col h-[100dvh] max-w-3xl mx-auto w-full border-x border-border-muted bg-bg-dark">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between h-14 px-4 border-b border-border-muted bg-surface/50 backdrop-blur-md flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-1.5 text-text-muted hover:text-white transition-colors" title="Back to Meeting Agent">
+          <span class="material-symbols-outlined text-lg">arrow_back</span>
+        </a>
+        <div class="w-px h-5 bg-border-muted"></div>
+        <span class="material-symbols-outlined text-primary text-xl">forum</span>
+        <h1 class="text-sm font-bold tracking-tight text-white">Meeting Knowledge Base</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] px-2 py-0.5 rounded border border-primary/30 bg-primary/10 text-primary font-mono uppercase font-bold tracking-wider">DigitalOcean</span>
+        <span class="text-[10px] px-2 py-0.5 rounded border border-border-muted bg-bg-dark text-slate-400 font-mono uppercase font-bold tracking-wider">assistant-ui</span>
+      </div>
+    </header>
+
+    <!-- Chat thread -->
+    <div id="chat-thread" class="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+
+      <!-- Welcome message -->
+      <div class="msg-enter flex gap-3 max-w-[85%]">
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary text-base">smart_toy</span>
+        </div>
+        <div class="bg-surface border border-border-muted rounded-2xl rounded-tl-sm px-4 py-3">
+          <p class="text-sm text-text-main leading-relaxed">Welcome to the Meeting Knowledge Base. I can search through your past meetings to find commitments, agreements, action items, and more. What would you like to know?</p>
+        </div>
+      </div>
+
+      <!-- Suggested questions -->
+      <div id="suggestions" class="flex flex-wrap gap-2 pl-11">
+        <button class="suggestion-btn text-xs px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 hover:border-primary/50 transition-colors">
+          What commitments were made?
+        </button>
+        <button class="suggestion-btn text-xs px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 hover:border-primary/50 transition-colors">
+          Summarize the last meeting
+        </button>
+        <button class="suggestion-btn text-xs px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 hover:border-primary/50 transition-colors">
+          What action items are pending?
+        </button>
+        <button class="suggestion-btn text-xs px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 hover:border-primary/50 transition-colors">
+          Who owns which tasks?
+        </button>
+        <button class="suggestion-btn text-xs px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 hover:border-primary/50 transition-colors">
+          What meetings were scheduled?
+        </button>
+      </div>
+    </div>
+
+    <!-- Composer -->
+    <div class="flex-shrink-0 border-t border-border-muted bg-surface px-4 py-3">
+      <form id="chat-form" class="flex gap-2">
+        <div class="relative flex-1">
+          <input
+            id="chat-input"
+            type="text"
+            placeholder="Ask about past meetings..."
+            autocomplete="off"
+            class="w-full h-11 pl-4 pr-4 rounded-xl bg-bg-dark border border-border-muted text-sm text-text-main placeholder:text-text-muted focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-colors"
+          />
+        </div>
+        <button
+          id="send-btn"
+          type="submit"
+          class="h-11 w-11 rounded-xl bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+        >
+          <span class="material-symbols-outlined text-lg">send</span>
+        </button>
+      </form>
+      <p class="text-[10px] text-slate-500 text-center mt-2">Powered by DigitalOcean Knowledge Base + assistant-ui</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const thread    = document.getElementById("chat-thread");
+      const form      = document.getElementById("chat-form");
+      const input     = document.getElementById("chat-input");
+      const sendBtn   = document.getElementById("send-btn");
+      const suggestions = document.getElementById("suggestions");
+
+      let isLoading = false;
+
+      // -- Helpers -----------------------------------------------------------
+
+      function scrollToBottom() {
+        requestAnimationFrame(() => {
+          thread.scrollTop = thread.scrollHeight;
+        });
+      }
+
+      function setLoading(on) {
+        isLoading = on;
+        sendBtn.disabled = on;
+        input.disabled = on;
+        if (on) input.placeholder = "Waiting for response...";
+        else    input.placeholder = "Ask about past meetings...";
+      }
+
+      function escapeHtml(text) {
+        const el = document.createElement("span");
+        el.textContent = text;
+        return el.innerHTML;
+      }
+
+      function formatResponse(text) {
+        // Convert markdown-style formatting to HTML
+        let html = escapeHtml(text);
+        // Bold
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>');
+        // Bullet lists
+        html = html.replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>');
+        // Numbered lists
+        html = html.replace(/^\d+\.\s(.+)$/gm, '<li class="ml-4 list-decimal">$1</li>');
+        // Line breaks
+        html = html.replace(/\n/g, '<br/>');
+        return html;
+      }
+
+      // -- Render messages ---------------------------------------------------
+
+      function addUserMessage(text) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "msg-enter flex justify-end";
+        wrapper.innerHTML = `
+          <div class="max-w-[75%] bg-primary/15 border border-primary/30 rounded-2xl rounded-tr-sm px-4 py-3">
+            <p class="text-sm text-text-main leading-relaxed">${escapeHtml(text)}</p>
+          </div>
+        `;
+        thread.appendChild(wrapper);
+        scrollToBottom();
+      }
+
+      function addThinkingIndicator() {
+        const wrapper = document.createElement("div");
+        wrapper.id = "thinking";
+        wrapper.className = "msg-enter flex gap-3 max-w-[85%]";
+        wrapper.innerHTML = `
+          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-base">smart_toy</span>
+          </div>
+          <div class="bg-surface border border-border-muted rounded-2xl rounded-tl-sm px-4 py-3">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs text-text-muted mr-1">Searching knowledge base</span>
+              <span class="thinking-dot inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
+              <span class="thinking-dot inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
+              <span class="thinking-dot inline-block w-1.5 h-1.5 rounded-full bg-primary"></span>
+            </div>
+          </div>
+        `;
+        thread.appendChild(wrapper);
+        scrollToBottom();
+      }
+
+      function removeThinkingIndicator() {
+        const el = document.getElementById("thinking");
+        if (el) el.remove();
+      }
+
+      function addAssistantMessage(text) {
+        removeThinkingIndicator();
+        const wrapper = document.createElement("div");
+        wrapper.className = "msg-enter flex gap-3 max-w-[85%]";
+        wrapper.innerHTML = `
+          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary text-base">smart_toy</span>
+          </div>
+          <div class="bg-surface border border-border-muted rounded-2xl rounded-tl-sm px-4 py-3">
+            <div class="text-sm text-text-main leading-relaxed">${formatResponse(text)}</div>
+          </div>
+        `;
+        thread.appendChild(wrapper);
+        scrollToBottom();
+      }
+
+      function addErrorMessage(text) {
+        removeThinkingIndicator();
+        const wrapper = document.createElement("div");
+        wrapper.className = "msg-enter flex gap-3 max-w-[85%]";
+        wrapper.innerHTML = `
+          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-danger/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-danger text-base">error</span>
+          </div>
+          <div class="bg-danger/5 border border-danger/20 rounded-2xl rounded-tl-sm px-4 py-3">
+            <p class="text-sm text-danger/80 leading-relaxed">${escapeHtml(text)}</p>
+          </div>
+        `;
+        thread.appendChild(wrapper);
+        scrollToBottom();
+      }
+
+      // -- API call ----------------------------------------------------------
+
+      async function sendMessage(text) {
+        if (!text.trim() || isLoading) return;
+        setLoading(true);
+
+        // Hide suggestions after first user message
+        if (suggestions) {
+          suggestions.style.display = "none";
+        }
+
+        addUserMessage(text.trim());
+        addThinkingIndicator();
+
+        try {
+          const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text.trim() }),
+          });
+
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({}));
+            throw new Error(errBody.error || `Server error (${res.status})`);
+          }
+
+          const data = await res.json();
+          addAssistantMessage(data.response || "No response received.");
+        } catch (err) {
+          console.error("Chat error:", err);
+          addErrorMessage(err.message || "Failed to connect to the knowledge base. Please try again.");
+        } finally {
+          setLoading(false);
+          input.focus();
+        }
+      }
+
+      // -- Event handlers ----------------------------------------------------
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const text = input.value;
+        input.value = "";
+        sendMessage(text);
+      });
+
+      // Suggestion buttons
+      document.querySelectorAll(".suggestion-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const text = btn.textContent.trim();
+          input.value = "";
+          sendMessage(text);
+        });
+      });
+
+      // Keyboard: Enter to send (Shift+Enter for nothing special in single-line input)
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          form.dispatchEvent(new Event("submit"));
+        }
+      });
+
+      // Auto-focus input on load
+      input.focus();
+    })();
+  </script>
+</body>
+</html>

@@ -6,9 +6,8 @@ window.MeetingAgent = window.MeetingAgent || {};
 
   // ── Sponsor state ──
   const sponsorState = {
-    auditTrail: [],
-    auditCount: 0,
-    killSwitchActive: false,
+    kbConnected: false,
+    meetingsArchived: 0,
     memoryConnected: false,
     memoryCommitments: 0,
     memoryDismissed: false,
@@ -48,120 +47,66 @@ window.MeetingAgent = window.MeetingAgent || {};
   };
 
   // ═══════════════════════════════════════
-  // Unkey Audit Trail
+  // Knowledge Base (DigitalOcean)
   // ═══════════════════════════════════════
 
-  function addAuditEntry(entry) {
-    if (sponsorState.killSwitchActive) return;
+  function updateKBStatus(data) {
+    const connected = data && data.connected;
+    sponsorState.kbConnected = connected;
 
-    const type = (entry.action_type || entry.type || 'task').toLowerCase();
-    const icon = ACTION_ICONS[type] || '\u2705';
-    const payload = entry.payload_summary || entry.summary || '';
-    const payloadShort = payload.length > 80 ? payload.slice(0, 80) + '...' : payload;
-    const sentiment = (entry.sentiment || 'neutral').toLowerCase();
-    const ts = entry.timestamp || timeStr();
-    const keyId = entry.key_id || 'uk_' + Math.random().toString(36).slice(2, 10);
+    if (typeof data.meetings_archived === 'number') {
+      sponsorState.meetingsArchived = data.meetings_archived;
+    }
 
-    const record = { icon, type, payloadShort, sentiment, ts, keyId };
-    sponsorState.auditTrail.unshift(record);
-    sponsorState.auditCount += 1;
-
-    renderAuditEntry(record);
-    updateAuditCounter();
+    if (dom.kbDot) {
+      dom.kbDot.className = `inline-block w-2 h-2 rounded-full flex-shrink-0 ${connected ? 'bg-success' : 'bg-slate-500'}`;
+    }
+    if (dom.kbStatus) {
+      dom.kbStatus.textContent = connected ? 'Connected' : 'Offline';
+      dom.kbStatus.className = `text-[10px] font-bold uppercase tracking-wider ${connected ? 'text-success' : 'text-slate-500'}`;
+    }
+    updateKBCounter();
   }
 
-  function renderAuditEntry(record) {
-    if (!dom.auditList) return;
-
-    const badge = SENTIMENT_BADGES[record.sentiment] || SENTIMENT_BADGES.neutral;
-
-    const row = document.createElement('div');
-    row.className = 'flex items-start gap-2.5 p-2.5 rounded-lg bg-bg-dark border border-border-muted hover:border-primary/20 transition-colors action-card-enter';
-
-    const iconEl = document.createElement('span');
-    iconEl.className = 'text-base flex-shrink-0 mt-0.5';
-    iconEl.textContent = record.icon;
-
-    const body = document.createElement('div');
-    body.className = 'flex-1 min-w-0';
-
-    const topRow = document.createElement('div');
-    topRow.className = 'flex items-center gap-2 mb-1';
-
-    const sentimentEl = document.createElement('span');
-    sentimentEl.className = `text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${badge.cls}`;
-    sentimentEl.textContent = badge.text;
-
-    const tsEl = document.createElement('span');
-    tsEl.className = 'text-[10px] text-slate-500 ml-auto flex-shrink-0';
-    tsEl.textContent = record.ts;
-
-    topRow.append(sentimentEl, tsEl);
-
-    const payloadEl = document.createElement('p');
-    payloadEl.className = 'text-[11px] text-slate-300 leading-snug truncate';
-    payloadEl.textContent = record.payloadShort;
-
-    const keyEl = document.createElement('p');
-    keyEl.className = 'text-[9px] text-slate-600 font-mono mt-1';
-    keyEl.textContent = record.keyId;
-
-    body.append(topRow, payloadEl, keyEl);
-    row.append(iconEl, body);
-    dom.auditList.prepend(row);
-  }
-
-  function updateAuditCounter() {
-    if (dom.auditCounter) {
-      dom.auditCounter.textContent = `${sponsorState.auditCount} action${sponsorState.auditCount !== 1 ? 's' : ''} audited this session`;
+  function updateKBCounter() {
+    if (dom.kbCounter) {
+      dom.kbCounter.textContent = `${sponsorState.meetingsArchived} meeting${sponsorState.meetingsArchived !== 1 ? 's' : ''} archived`;
     }
   }
 
-  async function killSwitch() {
-    if (sponsorState.killSwitchActive) return;
-
-    try {
-      const sessionId = state.currentSessionId || 'unknown';
-      await fetch('/api/unkey/kill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId }),
-      });
-    } catch (err) {
-      console.warn('Kill switch request failed:', err);
-    }
-
-    sponsorState.killSwitchActive = true;
-
-    if (dom.killBtn) {
-      dom.killBtn.disabled = true;
-      dom.killBtn.textContent = 'AGENT KILLED';
-      dom.killBtn.className = dom.killBtn.className
-        .replace('bg-danger', 'bg-slate-700')
-        .replace('hover:bg-danger/90', '')
-        .replace('border-danger/50', 'border-slate-600');
-    }
-
-    if (dom.auditPanel) {
-      dom.auditPanel.style.opacity = '0.5';
-      dom.auditPanel.style.pointerEvents = 'none';
-    }
+  function flashMeetingArchived() {
+    if (!dom.memoryFlash) return;
+    dom.memoryFlash.classList.remove('hidden');
+    dom.memoryFlash.classList.add('flex');
+    setTimeout(() => {
+      dom.memoryFlash.classList.add('hidden');
+      dom.memoryFlash.classList.remove('flex');
+    }, 3000);
   }
 
   // ═══════════════════════════════════════
-  // DigitalOcean Memory Indicator
+  // DigitalOcean Knowledge Base Header Badge
   // ═══════════════════════════════════════
 
   function updateMemoryStatus(data) {
     const connected = data && data.connected;
     sponsorState.memoryConnected = connected;
 
+    // Update header badge with Knowledge Base branding
     if (dom.memoryDot) {
       dom.memoryDot.className = `inline-block w-2 h-2 rounded-full flex-shrink-0 ${connected ? 'bg-success' : 'bg-slate-500'}`;
     }
     if (dom.memoryLabel) {
-      dom.memoryLabel.textContent = connected ? 'Meeting Memory: Connected' : 'Meeting Memory: Offline';
+      dom.memoryLabel.textContent = connected ? 'Knowledge Base: Connected' : 'Knowledge Base: Offline';
       dom.memoryLabel.className = `text-[10px] font-bold uppercase tracking-wider ${connected ? 'text-success' : 'text-slate-500'}`;
+    }
+
+    // Also sync KB panel status
+    updateKBStatus(data);
+
+    // Handle meetings_archived increment flash
+    if (data && typeof data.meetings_archived === 'number' && data.meetings_archived > sponsorState.meetingsArchived) {
+      flashMeetingArchived();
     }
 
     if (connected && data.open_commitments && data.open_commitments > 0 && !sponsorState.memoryDismissed) {
@@ -226,9 +171,6 @@ window.MeetingAgent = window.MeetingAgent || {};
     if (!message || !message.type) return false;
 
     switch (message.type) {
-      case 'audit_trail':
-        addAuditEntry(message.data || message);
-        return true;
       case 'memory_status':
         updateMemoryStatus(message.data || message);
         return true;
@@ -245,9 +187,8 @@ window.MeetingAgent = window.MeetingAgent || {};
   // ═══════════════════════════════════════
 
   function resetSponsorState() {
-    sponsorState.auditTrail = [];
-    sponsorState.auditCount = 0;
-    sponsorState.killSwitchActive = false;
+    sponsorState.kbConnected = false;
+    sponsorState.meetingsArchived = 0;
     sponsorState.memoryConnected = false;
     sponsorState.memoryCommitments = 0;
     sponsorState.memoryDismissed = false;
@@ -258,21 +199,16 @@ window.MeetingAgent = window.MeetingAgent || {};
       MeetingMemory: 'idle',
     };
 
-    if (dom.auditList) dom.auditList.textContent = '';
-    updateAuditCounter();
+    updateKBCounter();
+    updateKBStatus({ connected: false });
     renderFlowAgents();
 
-    if (dom.killBtn) {
-      dom.killBtn.disabled = false;
-      dom.killBtn.textContent = 'KILL SWITCH';
-      dom.killBtn.className = 'w-full h-9 bg-danger hover:bg-danger/90 text-white text-xs font-bold uppercase tracking-wider rounded-lg border border-danger/50 transition-colors flex items-center justify-center gap-1.5';
-    }
-    if (dom.auditPanel) {
-      dom.auditPanel.style.opacity = '';
-      dom.auditPanel.style.pointerEvents = '';
-    }
     if (dom.memoryCard) {
       dom.memoryCard.classList.add('hidden');
+    }
+    if (dom.memoryFlash) {
+      dom.memoryFlash.classList.add('hidden');
+      dom.memoryFlash.classList.remove('flex');
     }
     updateMemoryStatus({ connected: false });
   }
@@ -299,28 +235,33 @@ window.MeetingAgent = window.MeetingAgent || {};
 
   function init() {
     dom = {
-      auditPanel: document.getElementById('sponsor-audit-panel'),
-      auditList: document.getElementById('sponsor-audit-list'),
-      auditCounter: document.getElementById('sponsor-audit-counter'),
-      killBtn: document.getElementById('sponsor-kill-btn'),
-      auditToggle: document.getElementById('sponsor-audit-toggle'),
-      auditBody: document.getElementById('sponsor-audit-body'),
-      auditChevron: document.getElementById('sponsor-audit-chevron'),
+      // Knowledge Base panel
+      kbPanel: document.getElementById('sponsor-kb-panel'),
+      kbToggle: document.getElementById('sponsor-kb-toggle'),
+      kbBody: document.getElementById('sponsor-kb-body'),
+      kbChevron: document.getElementById('sponsor-kb-chevron'),
+      kbDot: document.getElementById('sponsor-kb-dot'),
+      kbStatus: document.getElementById('sponsor-kb-status'),
+      kbCounter: document.getElementById('sponsor-kb-counter'),
+      kbChatBtn: document.getElementById('sponsor-kb-chat-btn'),
+      // Header memory badge
       memoryBadge: document.getElementById('sponsor-memory-badge'),
       memoryDot: document.getElementById('sponsor-memory-dot'),
       memoryLabel: document.getElementById('sponsor-memory-label'),
+      memoryFlash: document.getElementById('sponsor-memory-flash'),
       memoryCard: document.getElementById('sponsor-memory-card'),
       memoryCardText: document.getElementById('sponsor-memory-card-text'),
       memoryDismiss: document.getElementById('sponsor-memory-dismiss'),
+      // Railtracks flow
       flowToggle: document.getElementById('sponsor-flow-toggle'),
       flowBody: document.getElementById('sponsor-flow-body'),
       flowChevron: document.getElementById('sponsor-flow-chevron'),
     };
 
-    // Audit trail collapse toggle
-    if (dom.auditToggle) {
-      dom.auditToggle.addEventListener('click', () => {
-        togglePanel(dom.auditBody, dom.auditChevron);
+    // Knowledge Base collapse toggle
+    if (dom.kbToggle) {
+      dom.kbToggle.addEventListener('click', () => {
+        togglePanel(dom.kbBody, dom.kbChevron);
       });
     }
 
@@ -331,17 +272,12 @@ window.MeetingAgent = window.MeetingAgent || {};
       });
     }
 
-    // Kill switch
-    if (dom.killBtn) {
-      dom.killBtn.addEventListener('click', killSwitch);
-    }
-
     // Memory card dismiss
     if (dom.memoryDismiss) {
       dom.memoryDismiss.addEventListener('click', dismissMemoryCard);
     }
 
-    updateAuditCounter();
+    updateKBCounter();
     renderFlowAgents();
   }
 
@@ -349,7 +285,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     init,
     handleSponsorMessage,
     resetSponsorState,
-    addAuditEntry,
+    updateKBStatus,
     updateMemoryStatus,
     updateFlowStatus,
   };

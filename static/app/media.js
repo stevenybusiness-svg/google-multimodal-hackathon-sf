@@ -123,7 +123,7 @@ window.MeetingAgent = window.MeetingAgent || {};
       dom.visionVideo.srcObject = state.videoStream;
       await dom.visionVideo.play();
       dom.visionVideo.classList.remove('hidden');
-      dom.visionVideo.style.cssText = 'display:block;position:fixed;bottom:60px;right:16px;width:200px;height:150px;border-radius:12px;border:2px solid #30363d;z-index:50;object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,0.6);';
+      dom.visionVideo.style.cssText = 'display:block;position:fixed;bottom:60px;right:16px;width:200px;height:150px;border-radius:12px;border:3px solid #30363d;z-index:50;object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,0.6);transition:border-color 0.5s ease, box-shadow 0.5s ease;';
       dom.visionCanvas.classList.remove('hidden');
       dom.visionCanvas.width = 200;
       dom.visionCanvas.height = 150;

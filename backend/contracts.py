@@ -18,7 +18,7 @@ SentimentValue = Literal[
     "surprise",
 ]
 ActionStatus = Literal["sent", "failed", "skipped", "logged", "blocked"]
-ActionType = Literal["slack", "calendar", "task", "document", "email", "infra"]
+ActionType = Literal["slack", "calendar", "task", "document", "email", "infra", "report"]
 WsMessageType = Literal["transcript", "interim", "status", "sentiment", "action", "done", "pipeline"]
 
 UNDERSTANDING_KEYS = (
@@ -27,6 +27,7 @@ UNDERSTANDING_KEYS = (
     "meeting_requests",
     "document_revisions",
     "infrastructure_requests",
+    "report_requests",
 )
 
 
@@ -65,6 +66,14 @@ class InfraRequest(TypedDict, total=False):
     sentiment: str           # gate: only provision on "positive"
 
 
+class ReportRequest(TypedDict, total=False):
+    query: str               # natural language description of the report
+    metrics: list[str]       # e.g. ["revenue", "cac", "spend"]
+    dimensions: list[str]    # e.g. ["channel", "segment"]
+    time_range: str          # e.g. "last 12 months", "Q1 2026"
+    sentiment: str
+
+
 class ContainerRequest(TypedDict, total=False):
     name: str                # service name, e.g. "web-api"
     image: str               # container image, e.g. "gcr.io/project/image:tag"
@@ -84,6 +93,7 @@ class UnderstandingResult(TypedDict):
     meeting_requests: list[MeetingRequest]
     document_revisions: list[DocumentRevision]
     infrastructure_requests: list[InfraRequest]
+    report_requests: list[ReportRequest]
     sentiment: str
 
 
@@ -119,6 +129,7 @@ def empty_understanding() -> UnderstandingResult:
         "meeting_requests": [],
         "document_revisions": [],
         "infrastructure_requests": [],
+        "report_requests": [],
         "sentiment": "neutral",
     }
 

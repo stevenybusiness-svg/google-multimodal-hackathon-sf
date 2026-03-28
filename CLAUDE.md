@@ -33,6 +33,7 @@ When editing code, follow the checklists in §7 and the reuse vs avoid table in 
 | commitment | understanding → actions | `owner`, `what`, `by_when?`, `sentiment?` | "I will X by Y" |
 | agreement | understanding → actions | `summary`, `sentiment?` | "We agreed X" |
 | document_revision | understanding → actions | `change`, `section?` | "Change the budget to 75K" |
+| report_request | understanding → actions | `query`, `metrics?`, `dimensions?`, `time_range?`, `sentiment?` | "Generate a report on CAC by channel" |
 | action_request | actions → Slack/etc. | `type`, `payload` | One API call per item |
 
 Define **commitment** vs **agreement** in one place (e.g. one module or README); action router consumes that shape only.
@@ -44,8 +45,9 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 | Flow | In | Out |
 |------|----|-----|
 | Voice | Mic PCM (all audio, no silence gating) | Transcript — **Google Cloud Speech-to-Text v1** (streaming, interim + final results, reconnects every 4 min) |
-| Understanding | Transcript segments + face sentiment | Commitments + agreements + meeting_requests + document_revisions + sentiment via `gemini-3-flash-preview` |
-| Actions | Commitments / agreements / meeting-requests / document-revisions | Google Calendar + task log + doc upload to Slack; **negative/uncertain sentiment gates (blocks) actions**; positive sentiment adjusts content (risk flag) |
+| Understanding | Transcript segments + face sentiment | Commitments + agreements + meeting_requests + document_revisions + report_requests + sentiment via `gemini-3-flash-preview` |
+| Actions | Commitments / agreements / meeting-requests / document-revisions / report-requests | Google Calendar + task log + doc upload to Slack + BigQuery reports + Looker Studio links; **negative/uncertain sentiment gates (blocks) actions** |
+| Reports | Report request (NL query) | Gemini NL→SQL → BigQuery query → results + Looker Studio URL → Slack post |
 | Vision | Frames (debounced every 2s) | Face emotion; guarded, normalized; fed into Understanding and action gating |
 
 **Hackathon compliance (Multimodal Frontier Hackathon — March 28, 2026):**
@@ -121,8 +123,8 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 ## 9. Success Criteria
 
 1. **Voice:** Google Cloud STT streaming → stable real-time transcript with interim results (~200ms).
-2. **Understanding:** Transcript + face sentiment → commitments/agreements/meeting_requests/doc_revisions; sentiment classified as positive/neutral/negative/uncertain.
-3. **Actions:** Commitment → task logged; meeting request → Calendar event created; document revision → revised brief uploaded to Slack. Negative sentiment blocks action. Uncertain + negative face blocks action. Positive/neutral proceed, with risk flag added for uncertain text.
+2. **Understanding:** Transcript + face sentiment → commitments/agreements/meeting_requests/doc_revisions/report_requests; sentiment classified as positive/neutral/negative/uncertain.
+3. **Actions:** Commitment → task logged; meeting request → Calendar event created; document revision → revised brief uploaded to Slack; report request → BigQuery NL→SQL query → results + Looker Studio link posted to Slack. Negative sentiment blocks action. Uncertain + negative face blocks action.
 4. **Vision:** No crash on no face; normalized sentiment (0–1); face emotion feeds action gating (uncertain+angry/sad = blocked).
 5. **Deploy:** Backend running on Cloud Run; screenshot or URL as submission proof.
 6. **Demo:** ≤4min video opens with autonomous 3-action execution (Slack + Calendar + task fire in 5s). Sentiment shown as intelligence layer.

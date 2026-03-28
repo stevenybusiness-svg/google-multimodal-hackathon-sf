@@ -14,6 +14,7 @@ from backend.contracts import (
     UnderstandingResult,
     make_action_result,
 )
+from backend.bigquery import generate_report, bq_available
 from backend.documents import MARKETING_BRIEF, revise_document
 
 logger = logging.getLogger(__name__)
@@ -283,6 +284,8 @@ class ActionSession:
         revisions = understanding.get("document_revisions", [])
         if revisions:
             await _emit(await self._document_revision(revisions))
+        for rr in understanding.get("report_requests", []):
+            await _emit(await self._report_request(rr, face_sentiment))
         return actions
 
     async def _commitment(self, c: dict, face_sentiment: dict | None = None) -> list[ActionResult]:
@@ -352,6 +355,28 @@ class ActionSession:
             if overlap / max(len(words), 1) > 0.5 or overlap / max(len(existing_words), 1) > 0.5:
                 return True
         return False
+
+    async def _report_request(self, r: dict, face_sentiment: dict | None = None) -> list[ActionResult]:
+        query = r.get("query", "")
+        sent = r.get("sentiment", "neutral")
+
+        if self._should_block(sent, face_sentiment):
+            logger.info("Report request BLOCKED (sentiment=%s): %s", sent, query)
+            return [make_action_result("report", {"query": query}, "blocked", sentiment=sent)]
+
+        if not bq_available():
+            logger.warning("BigQuery not configured — skipping report: %s", query)
+            return [make_action_result("report", {"query": query}, "skipped", "BigQuery not configured")]
+
+        try:
+            report = await generate_report(query)
+            # Post report summary to Slack
+            slack_text = f"📊 *Report Generated*\n*Query:* {query}\n*Results:* {len(report.get('results', []))} rows\n{report.get('summary', '')}\n\n🔗 <{report.get('looker_url', '')}|Open in Looker Studio>"
+            await _post_slack(slack_text)
+            return [make_action_result("report", report, "sent", sentiment=sent)]
+        except Exception as exc:
+            logger.error("Report generation failed: %s", exc)
+            return [make_action_result("report", {"query": query}, "failed", str(exc), sentiment=sent)]
 
     async def _document_revision_locked(self, revisions: list[dict]) -> list[ActionResult]:
         import time

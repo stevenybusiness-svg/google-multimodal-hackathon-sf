@@ -13,3 +13,5 @@ pytest>=8.3.0
 typing_extensions>=4.12.0
 unkey-py>=0.10.0
 openai>=1.0.0
+google-cloud-bigquery>=3.9.0
+db-dtypes>=1.0.0

@@ -32,9 +32,9 @@ from backend.understanding import TranscriptBuffer, UNDERSTANDING_MODEL
 from backend.session_state import session_registry
 from backend.vision import analyze_frame
 from backend.voice import VoicePipeline
-from backend.sponsor_unkey import unkey_available, create_action_audit, get_session_audit, revoke_all_session_keys
-from backend.sponsor_digitalocean import do_available, do_archive_meeting, do_query_meeting_memory
+from backend.sponsor_digitalocean import do_available, do_archive_meeting, kb_stats
 from backend.sponsor_railtracks import get_flow_status, run_meeting_flow
+from backend.bigquery import bq_available, generate_report, setup_dataset, run_query, nl_to_sql
 
 app = FastAPI(title="Meeting Agent")
 
@@ -43,7 +43,7 @@ class NoCacheMiddleware(BaseHTTPMiddleware):
     """Prevent browsers from serving stale static files after deploys."""
     async def dispatch(self, request, call_next):
         response = await call_next(request)
-        if request.url.path == "/" or request.url.path.startswith("/static"):
+        if request.url.path in ("/", "/chat") or request.url.path.startswith("/static"):
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
@@ -102,6 +102,57 @@ async def index():
     )
 
 
+@app.get("/chat")
+async def chat_page():
+    return FileResponse(
+        "static/chat.html",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
+
+@app.post("/api/chat")
+async def api_chat(request: Request):
+    """Query the DigitalOcean Knowledge Base about past meeting data."""
+    body = await request.json()
+    message = body.get("message", "").strip()
+    if not message:
+        return JSONResponse({"error": "message is required"}, status_code=400)
+
+    if not do_available():
+        return JSONResponse({
+            "response": (
+                "The DigitalOcean Knowledge Base is not configured. "
+                "Please set DO_AGENT_ENDPOINT and DO_AGENT_ACCESS_KEY "
+                "environment variables to enable meeting memory."
+            )
+        })
+
+    from backend.sponsor_digitalocean import _get_client
+    client = _get_client()
+    if client is None:
+        return JSONResponse({
+            "response": "Unable to connect to the knowledge base. Please check your configuration."
+        })
+
+    try:
+        response = await client.chat.completions.create(
+            model="n/a",
+            messages=[{"role": "user", "content": message}],
+        )
+        answer = response.choices[0].message.content or "No relevant information found."
+        return JSONResponse({"response": answer})
+    except Exception as exc:
+        logger.error("Chat API error: %s", exc)
+        return JSONResponse(
+            {"error": "Failed to query knowledge base. Please try again."},
+            status_code=500,
+        )
+
+
 @app.websocket("/ws/audio")
 async def websocket_audio(ws: WebSocket):
     await ws.accept()
@@ -141,19 +192,6 @@ async def websocket_audio(ws: WebSocket):
                 await send(make_ws_message("action", action))
                 await send(make_ws_message("pipeline", {"event": "action_dispatched", "action_type": action["type"]}))
 
-                # Unkey audit trail — create per-action key
-                if unkey_available():
-                    payload_str = json.dumps(action.get("payload", {}), default=str)[:100]
-                    audit = await create_action_audit(
-                        session_id, action.get("type", "unknown"), payload_str,
-                        action.get("sentiment", "neutral"),
-                    )
-                    if audit:
-                        await send(make_ws_message("audit_trail", {
-                            "key_id": audit["key_id"], "action_type": action.get("type"),
-                            "payload_summary": payload_str, "sentiment": action.get("sentiment", "neutral"),
-                        }))
-
             actions = await session.dispatch(
                 understanding,
                 has_calendar=calendar_service is not None,
@@ -161,6 +199,16 @@ async def websocket_audio(ws: WebSocket):
                 on_action=_on_action,
             )
             _all_actions.extend(actions)
+
+            # After actions are dispatched, update Railtracks flow status
+            flow_status = get_flow_status()
+            flow_status["actions_dispatched"] = len(actions)
+            await send(make_ws_message("flow_status", {"agents": {
+                "TranscriptAnalyzer": "running" if understanding else "idle",
+                "SentimentMonitor": "running",
+                "ActionExecutor": "running" if actions else "idle",
+                "MeetingMemory": "running",
+            }}))
 
             # Infrastructure provisioning — fire-and-forget per D-04
             for infra_req in understanding.get("infrastructure_requests", []):
@@ -209,6 +257,12 @@ async def websocket_audio(ws: WebSocket):
 
         face = session_state.vision.latest_sentiment()
         await send(make_ws_message("pipeline", {"event": "understanding_start"}))
+        await send(make_ws_message("flow_status", {"agents": {
+            "TranscriptAnalyzer": "running",
+            "SentimentMonitor": "running",
+            "ActionExecutor": "idle",
+            "MeetingMemory": "idle",
+        }}))
         understanding = await buf.process(text, face, on_result=_handle_understanding)
         if understanding is None:  # None = still buffering or cooldown pending
             return
@@ -399,34 +453,86 @@ async def api_provision_container(request: Request):
 async def sponsors_status():
     """Return which sponsor integrations are active."""
     return JSONResponse({
-        "unkey": unkey_available(),
+        "assistant_ui": True,
         "digitalocean": do_available(),
         "railtracks": True,  # always available (uses existing GOOGLE_API_KEY)
+        "bigquery": bq_available(),
     })
 
 
-@app.post("/api/unkey/kill")
-async def unkey_kill(request: Request):
-    """Kill switch — revoke all Unkey audit keys for a session."""
+@app.post("/api/chat")
+async def api_chat(request: Request):
+    """Chat with meeting knowledge base via DO Agent."""
     body = await request.json()
-    sid = body.get("session_id", "")
-    if not sid:
-        return JSONResponse({"error": "session_id required"}, status_code=400)
-    revoked = await revoke_all_session_keys(sid)
-    return JSONResponse({"revoked": revoked, "session_id": sid})
+    message = body.get("message", "")
+    if not message:
+        return JSONResponse({"error": "message required"}, status_code=400)
+
+    from backend.sponsor_digitalocean import do_chat
+    if not do_available():
+        return JSONResponse({"error": "Knowledge base not configured"}, status_code=503)
+
+    response = await do_chat(message)
+    return JSONResponse({"response": response})
 
 
-@app.get("/api/unkey/audit")
-async def unkey_audit(request: Request):
-    """Get audit trail for a session."""
-    sid = request.query_params.get("session_id", "")
-    if not sid:
-        return JSONResponse({"error": "session_id required"}, status_code=400)
-    trail = await get_session_audit(sid)
-    return JSONResponse({"session_id": sid, "actions": trail, "count": len(trail)})
+@app.get("/api/kb/status")
+async def kb_status():
+    """Get Knowledge Base status — documents loaded, availability."""
+    return JSONResponse(kb_stats())
 
 
 @app.get("/api/railtracks/status")
 async def railtracks_status():
     """Get Railtracks agent flow status for the visualizer."""
     return JSONResponse(get_flow_status())
+
+
+# -- BigQuery / Report endpoints -----------------------------------------------
+
+
+@app.post("/api/bigquery/setup")
+async def bigquery_setup():
+    """Create BigQuery dataset, table, and seed sample marketing data."""
+    if not bq_available():
+        return JSONResponse({"error": "GOOGLE_CLOUD_PROJECT not set"}, status_code=503)
+    try:
+        status = await setup_dataset()
+        return JSONResponse({"status": status})
+    except Exception as exc:
+        logger.error("BigQuery setup failed: %s", exc)
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@app.post("/api/bigquery/query")
+async def bigquery_query(request: Request):
+    """Run a natural-language query against BigQuery marketing data."""
+    if not bq_available():
+        return JSONResponse({"error": "GOOGLE_CLOUD_PROJECT not set"}, status_code=503)
+    body = await request.json()
+    query = body.get("query", "").strip()
+    if not query:
+        return JSONResponse({"error": "query is required"}, status_code=400)
+    try:
+        report = await generate_report(query)
+        return JSONResponse(report)
+    except Exception as exc:
+        logger.error("BigQuery query failed: %s", exc)
+        return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@app.post("/api/bigquery/sql")
+async def bigquery_sql(request: Request):
+    """Execute raw SQL against BigQuery (for advanced users / testing)."""
+    if not bq_available():
+        return JSONResponse({"error": "GOOGLE_CLOUD_PROJECT not set"}, status_code=503)
+    body = await request.json()
+    sql = body.get("sql", "").strip()
+    if not sql:
+        return JSONResponse({"error": "sql is required"}, status_code=400)
+    try:
+        results = await run_query(sql)
+        return JSONResponse({"results": results, "row_count": len(results)})
+    except Exception as exc:
+        logger.error("BigQuery SQL failed: %s", exc)
+        return JSONResponse({"error": str(exc)}, status_code=500)

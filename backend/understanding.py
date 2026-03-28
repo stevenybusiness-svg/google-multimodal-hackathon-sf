@@ -38,6 +38,12 @@ Given a transcript segment and optional face sentiment, extract:
   - ports: list of TCP port strings mentioned (e.g. ["80", "443"]; empty list if none)
   - description: brief description of the request
   - sentiment: positive/neutral/negative/uncertain (same rules as other fields — only "positive" triggers provisioning)
+- report_requests: requests to generate data reports, dashboards, or analytics ("generate a report on marketing spend", "show me CAC by channel", "create a dashboard for revenue trends", "what were the top drivers of cost")
+  - query: the natural language description of what report to generate
+  - metrics: list of metrics mentioned (e.g. ["revenue", "cac", "spend", "conversions", "roi"])
+  - dimensions: list of grouping dimensions mentioned (e.g. ["channel", "segment", "date"])
+  - time_range: time period mentioned (e.g. "last 12 months", "Q1 2026", "past quarter") or "all" if not specified
+  - sentiment: positive/neutral/negative/uncertain
 - sentiment: combined text + face sentiment (positive / neutral / negative / uncertain)
 
 DATE/TIME RULES (CRITICAL):
@@ -68,10 +74,11 @@ Return ONLY valid JSON (no markdown fences):
   "meeting_requests": [{{"summary": "...", "attendees": [], "when": "ISO 8601 datetime — ALWAYS resolve relative dates", "sentiment": "..."}}],
   "document_revisions": [{{"change": "specific change to apply", "section": "which section of the document to change"}}],
   "infrastructure_requests": [{{"name": "...", "machine_type": "...", "zone": "...", "disk_size_gb": 20, "ports": [], "description": "...", "sentiment": "..."}}],
+  "report_requests": [{{"query": "...", "metrics": ["..."], "dimensions": ["..."], "time_range": "...", "sentiment": "..."}}],
   "sentiment": "positive|neutral|negative|uncertain"
 }}
 
-If nothing found: {{"commitments": [], "agreements": [], "meeting_requests": [], "document_revisions": [], "infrastructure_requests": [], "sentiment": "neutral"}}
+If nothing found: {{"commitments": [], "agreements": [], "meeting_requests": [], "document_revisions": [], "infrastructure_requests": [], "report_requests": [], "sentiment": "neutral"}}
 
 PRIOR MEETING CONTEXT (from DigitalOcean Knowledge Base — may be empty):
 {prior_context}

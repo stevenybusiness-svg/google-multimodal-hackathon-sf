@@ -6,7 +6,7 @@
 
 ## For Claude (paste as system prompt or project context)
 
-You are working on a **live meeting agent** that autonomously executes actions from what is said and agreed in meetings — calendar event created, task logged, and document updated — the moment a commitment, meeting request, agreement, or document revision is detected. Sentiment gates negative actions (explicit "no" or uncertain+negative face = blocked) and adjusts content on positive actions (risk flag, deadline buffer). Input: real-time voice + optional video. **Primary STT: Google Cloud Speech-to-Text v1 (streaming, interim results).** All understanding/revision AI calls use Gemini (Google DeepMind is lead sponsor; keep stack aligned). Backend on Google Cloud Run. Submitted to the **Multimodal Frontier Hackathon** (March 28, 2026, San Francisco — [Devpost](https://multimodal-frontier-hackathon.devpost.com/)); sponsored by Google DeepMind + DigitalOcean + Unkey + Railtracks + others; $45k+ prize pool. **Mandatory: integrate at least 3 sponsor tools** (20% of judging score). Our 3: **DigitalOcean** (inference), **Unkey** (API key mgmt), **Railtracks** (agentic framework).
+You are working on a **live meeting agent** that autonomously executes actions from what is said and agreed in meetings — calendar event created, task logged, and document updated — the moment a commitment, meeting request, agreement, or document revision is detected. Actions are blocked **deterministically** — only when the speaker explicitly says not to proceed ("no", "don't do that", "cancel"). Voice/video sentiment analysis is a supplementary signal that informs context but does not independently gate actions. Input: real-time voice + optional video. **Primary STT: Google Cloud Speech-to-Text v1 (streaming, interim results).** All understanding/revision AI calls use Gemini (Google DeepMind is lead sponsor; keep stack aligned). Backend on Google Cloud Run. Submitted to the **Multimodal Frontier Hackathon** (March 28, 2026, San Francisco — [Devpost](https://multimodal-frontier-hackathon.devpost.com/)); sponsored by Google DeepMind + DigitalOcean + Unkey + Railtracks + others; $45k+ prize pool. **Mandatory: integrate at least 3 sponsor tools** (20% of judging score). Our 3: **DigitalOcean** (inference), **Unkey** (API key mgmt), **Railtracks** (agentic framework).
 
 **Contract:** transcript (text, speaker?, ts) → understanding → commitment (owner, what, by_when?, sentiment?) or agreement (summary, sentiment?) or meeting_request (summary, attendees?, when?, sentiment?) or document_revision (change, section?) → action_request (type, payload) → Slack/tasks/calendar/document upload. Define commitment vs agreement in one place; action router consumes only these shapes.
 
@@ -20,7 +20,7 @@ When editing code, follow the checklists in §7 and the reuse vs avoid table in 
 
 - **Product:** Live meeting agent that **takes action** from what is said and agreed (Slack follow-ups, tasks, calendar, document updates). Sentiment used for prioritization and tone. **No memorabilia** (no storybook, memory video, Veo, image gen). No Chrome extension, no Tableau, no Claude/Anthropic.
 - **Input:** Real-time voice via Gemini Live API (+ optional video via Cloud Vision). **Output:** Autonomous actions — Slack messages, Google Calendar events, tasks, and document updates — fired the moment commitments, meeting requests, agreements, or document revisions are detected.
-- **Key differentiator:** Every other meeting tool transcribes; this one acts. The agent is fully multimodal — it **sees** (Cloud Vision: facial sentiment), **hears** (Cloud STT: real-time transcription with interim results), and **understands** (Gemini Flash: intent extraction) — then acts: calendar events created, tasks logged, doc revisions uploaded to Slack. Negative sentiment gates actions (won't fire if speaker says "no" or face+uncertainty conflict). The demo moment: calendar event + task + doc revision fire in ~5 seconds while a meeting is live.
+- **Key differentiator:** Every other meeting tool transcribes; this one acts. The agent is fully multimodal — it **sees** (Cloud Vision: facial sentiment), **hears** (Cloud STT: real-time transcription with interim results), and **understands** (Gemini Flash: intent extraction) — then acts: calendar events created, tasks logged, doc revisions uploaded to Slack, BigQuery reports generated with Looker Studio links. Actions are blocked only by explicit verbal opposition ("no", "cancel"); voice/video sentiment is supplementary context that informs but does not independently gate. The demo moment: calendar event + task + report fire in ~5 seconds while a meeting is live.
 
 ---
 
@@ -46,7 +46,7 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 |------|----|-----|
 | Voice | Mic PCM (all audio, no silence gating) | Transcript — **Google Cloud Speech-to-Text v1** (streaming, interim + final results, reconnects every 4 min) |
 | Understanding | Transcript segments + face sentiment | Commitments + agreements + meeting_requests + document_revisions + report_requests + sentiment via `gemini-3-flash-preview` |
-| Actions | Commitments / agreements / meeting-requests / document-revisions / report-requests | Google Calendar + task log + doc upload to Slack + BigQuery reports + Looker Studio links; **negative/uncertain sentiment gates (blocks) actions** |
+| Actions | Commitments / agreements / meeting-requests / document-revisions / report-requests | Google Calendar + task log + doc upload to Slack + BigQuery reports + Looker Studio links; **explicit verbal opposition blocks actions**; sentiment informs but does not independently gate |
 | Reports | Report request (NL query) | Gemini NL→SQL → BigQuery query → results + Looker Studio URL → Slack post |
 | Vision | Frames (debounced every 2s) | Face emotion; guarded, normalized; fed into Understanding and action gating |
 
@@ -54,7 +54,7 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 - Theme: agents that **see, hear, and understand** the world — our stack maps exactly: Cloud Vision (see) + Gemini Live (hear) + Gemini Flash (understand)
 - Google DeepMind is lead sponsor; Gemini stack is strategic advantage with judges
 - DigitalOcean is co-sponsor; use DO inference as alternative model backend (OpenAI-compatible endpoint at `inference.do-ai.run`)
-- **Mandatory: integrate at least 3 sponsor tools** — our 3: DigitalOcean (inference), Unkey (API key mgmt + rate limiting), Railtracks (agentic framework)
+- **Mandatory: integrate at least 3 sponsor tools** — our 3: DigitalOcean (Knowledge Base + inference), assistant-ui (chat interface), Railtracks (agentic framework)
 - Submission needs: public repo + live deploy proof + system architecture diagram + ≤3min demo video + publish skill to shipables.dev
 - Win angle: 3 autonomous actions fire in 5s triggered by multimodal input (voice + facial sentiment). No human gate. Real inputs from the real world.
 
@@ -103,7 +103,7 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 
 **Context:** [ ] Backend split by pipeline  [ ] One project doc; rules &lt; ~40 lines each  [ ] STT: Gemini Live API noted in one place
 
-**Hackathon (Multimodal Frontier — Mar 28):** [ ] Gemini Live API as primary STT  [ ] All LLM = Gemini (aligned with Google DeepMind sponsor)  [ ] Google Calendar API integrated  [ ] Cloud Run deployed (screenshot/URL for proof)  [ ] Architecture diagram shows see+hear+understand layers  [ ] Demo video filmed (≤3min, opens with autonomous 3-action moment triggered by multimodal input)  [ ] 3 sponsor integrations: DigitalOcean inference + Unkey API key mgmt + Railtracks agentic framework  [ ] Publish skill to shipables.dev  [ ] Register + submit at https://multimodal-frontier-hackathon.devpost.com/
+**Hackathon (Multimodal Frontier — Mar 28):** [ ] Gemini Live API as primary STT  [ ] All LLM = Gemini (aligned with Google DeepMind sponsor)  [ ] Google Calendar API integrated  [ ] Cloud Run deployed (screenshot/URL for proof)  [ ] Architecture diagram shows see+hear+understand layers  [ ] Demo video filmed (≤3min, opens with autonomous 3-action moment triggered by multimodal input)  [ ] 3 sponsor integrations: DigitalOcean KB + assistant-ui chat + Railtracks agentic framework  [ ] Publish skill to shipables.dev  [ ] Register + submit at https://multimodal-frontier-hackathon.devpost.com/
 
 **Process:** [ ] After first integration: 5 min test (speak + optional camera); captions + at least one action  [ ] If document revisions stay in scope: verify revised brief upload path  [ ] Before demo: re-run checklists
 
@@ -124,7 +124,7 @@ Define **commitment** vs **agreement** in one place (e.g. one module or README);
 
 1. **Voice:** Google Cloud STT streaming → stable real-time transcript with interim results (~200ms).
 2. **Understanding:** Transcript + face sentiment → commitments/agreements/meeting_requests/doc_revisions/report_requests; sentiment classified as positive/neutral/negative/uncertain.
-3. **Actions:** Commitment → task logged; meeting request → Calendar event created; document revision → revised brief uploaded to Slack; report request → BigQuery NL→SQL query → results + Looker Studio link posted to Slack. Negative sentiment blocks action. Uncertain + negative face blocks action.
+3. **Actions:** Commitment → task logged; meeting request → Calendar event created; document revision → revised brief uploaded to Slack; report request → BigQuery NL→SQL query → results + Looker Studio link posted to Slack. Only explicit verbal opposition blocks actions ("no", "cancel", "don't"). Voice/video sentiment is supplementary context, not an independent gate.
 4. **Vision:** No crash on no face; normalized sentiment (0–1); face emotion feeds action gating (uncertain+angry/sad = blocked).
 5. **Deploy:** Backend running on Cloud Run; screenshot or URL as submission proof.
 6. **Demo:** ≤4min video opens with autonomous 3-action execution (Slack + Calendar + task fire in 5s). Sentiment shown as intelligence layer.

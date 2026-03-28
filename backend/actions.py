@@ -253,16 +253,12 @@ class ActionSession:
 
     @staticmethod
     def _should_block(text_sentiment: str, face_sentiment: dict | None) -> bool:
-        """Primary gate: text sentiment. Face is supplemental signal for uncertain cases.
-        - "negative" (explicit verbal opposition / cancellation) → always block
-        - "uncertain" + face frowning → block (face breaks the tie)
-        - "positive" / "neutral" → always proceed (even if face frowns)
+        """Deterministic gate: only block when speaker explicitly says no.
+        - "negative" = explicit verbal opposition ("no", "cancel", "don't do that") → block
+        - All other sentiments → proceed. Voice/video sentiment is informational context,
+          not an independent gate.
         """
-        if text_sentiment == "negative":
-            return True
-        if text_sentiment == "uncertain":
-            return bool(face_sentiment and face_sentiment.get("sentiment") in _NEGATIVE_FACES)
-        return False
+        return text_sentiment == "negative"
 
     async def dispatch(self, understanding: UnderstandingResult, has_calendar: bool = False,
                        face_sentiment: dict | None = None,

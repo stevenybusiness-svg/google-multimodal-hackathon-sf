@@ -68,7 +68,7 @@ _load_sample_data()
 
 def kb_stats() -> dict:
     """Return KB stats for the UI."""
-    return {"documents": len(_knowledge_base), "available": do_available()}
+    return {"documents": len(_knowledge_base), "available": len(_knowledge_base) > 0}
 
 
 # -- Archive: store meeting transcript in KB --------------------------------

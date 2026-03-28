@@ -1,47 +1,118 @@
-# Google Meet Premium: AI Meeting Agent
+# AI Meeting Autopilot
 
-An autonomous meeting agent that listens to conversations in real time, detects commitments, meeting requests, agreements, and document revisions, then **immediately acts** — creating Google Calendar events, sending Slack messages, revising shared documents, and emailing meeting summaries. No human gate. No post-meeting review.
+**Your autonomous assistant that immediately executes action items you say in a meeting. Informed by real-time voice and video sentiment analysis.**
 
-**Built for:** [Gemini Live Agent Challenge](https://geminiliveagentchallenge.devpost.com/)
+An AI meeting agent that **sees** (Cloud Vision facial sentiment), **hears** (Cloud STT real-time transcription), **understands** (Gemini intent extraction), and **acts** (Slack + Calendar + tasks + docs + Looker Studio reports + email) — autonomously, with no human gate. Actions fire within 5 seconds of detection. Say "Generate a report on CAC by channel" mid-meeting and a full **Google Looker Studio report** with interactive Chart.js visualizations is generated live, queried from BigQuery via Gemini NL-to-SQL, and posted to Slack — all before the next sentence.
 
-**Live Demo:** [https://meeting-agent-31043195041.us-central1.run.app](https://meeting-agent-31043195041.us-central1.run.app)
+**Built for:** [Multimodal Frontier Hackathon](https://multimodal-frontier-hackathon.devpost.com/) (March 28, 2026, San Francisco)
 
-## Google Cloud Services Used
+**Live Demo:** [https://meeting-agent-ynzg64zhoa-uc.a.run.app/](https://meeting-agent-ynzg64zhoa-uc.a.run.app/)
 
-| Service | Purpose | Code Reference |
-|---------|---------|----------------|
-| **Gemini API** (`gemini-3-flash-preview`) | Transcript understanding + document revision | [`backend/understanding.py`](backend/understanding.py), [`backend/documents.py`](backend/documents.py) |
-| **Cloud Speech-to-Text v1** | Real-time streaming voice transcription | [`backend/voice.py`](backend/voice.py) |
-| **Cloud Vision API** | Face detection + emotion/sentiment analysis | [`backend/vision.py`](backend/vision.py) |
-| **Google Calendar API** | Create calendar events from spoken meeting requests | [`backend/actions.py`](backend/actions.py) |
-| **Gmail API** | Send meeting summary email to participants | [`backend/email_summary.py`](backend/email_summary.py) |
-| **Cloud Run** | Production deployment (Docker, us-central1) | [`Dockerfile`](Dockerfile) |
+Powered by Google Cloud & Gemini
+
+---
+
+## Technical Depth
+
+### Real-Time Streaming Pipeline (< 5s end-to-end)
+
+```
+Browser PCM (16kHz) → WebSocket → Cloud STT v1 Streaming → TranscriptBuffer
+    → Gemini Understanding → Sentiment Gating → ActionSession.dispatch()
+        ├─ Slack post (async)
+        ├─ Google Calendar event (async)
+        ├─ Document revision via Gemini → Slack upload (async)
+        ├─ BigQuery NL-to-SQL report (async)
+        └─ Gmail meeting summary (at meeting end)
+```
+
+| Component | Implementation | Why |
+|-----------|---------------|-----|
+| **TranscriptBuffer** | 2s cooldown batching, flush on sentence boundary or 500 chars | Coalesces speech segments, minimizes Gemini API calls |
+| **Action dispatch** | `asyncio.create_task()` + `set` for GC prevention | Fire-and-forget: Slack/Calendar/docs execute without blocking audio pipeline |
+| **Session isolation** | `SessionState` dataclass registry per WebSocket | Zero cross-session bleed in concurrent meetings |
+| **STT reconnect** | Proactive at 4 min (before 5-min hard limit), 50-frame audio queue | Seamless continuous transcription |
+| **Sentiment gating** | Deterministic: only explicit verbal opposition blocks. Face sentiment = supplementary | No false positives from a momentary frown |
+| **Vision pipeline** | 2s debounce, asyncio.Semaphore(3), emotion normalization 0-1 | Rate-limited, near-real-time face state |
+
+### Per-Session Architecture
+
+Each WebSocket connection instantiates its own `TranscriptBuffer`, `ActionSession`, and `VisionState`. A single uvicorn worker handles multiple concurrent meetings. Background tasks (`_bg_tasks` set) prevent garbage collection of in-flight API calls. At meeting end, all pending tasks are awaited before the session is torn down.
+
+---
+
+## Sponsor Integrations
+
+### 1. DigitalOcean — Knowledge Base + Inference
+
+Cross-meeting memory powered by DO Serverless Inference (`inference.do-ai.run/v1/`, `llama3.3-70b-instruct`).
+
+- **Meeting archival** — Full transcript + extracted actions archived to Knowledge Base at meeting end
+- **Chat interface** — Natural language queries against past meetings ("What did we commit to last week?")
+- **Context injection** — Prior commitments and decisions injected into Gemini's understanding prompt for meeting continuity
+- **Live status** — KB availability, document count, and archive confirmations displayed in real time
+
+**Code:** [`backend/sponsor_digitalocean.py`](backend/sponsor_digitalocean.py) | [`static/chat.html`](static/chat.html)
+
+### 2. Railtracks — Agentic Framework
+
+Multi-agent orchestration with sentiment-gated routing across 4 specialist nodes.
+
+- **TranscriptAnalyzer** — Extracts structured commitments, agreements, meeting requests
+- **SentimentMonitor** — Evaluates combined face + text sentiment before routing to execution
+- **ActionExecutor** — Dispatches to Slack, Calendar, tasks, documents
+- **MeetingMemory** — Stores commitments + agreements for cross-meeting recall
+- **Flow visualization** — Real-time agent status (idle/running/blocked) in the UI
+
+**Code:** [`backend/sponsor_railtracks.py`](backend/sponsor_railtracks.py)
+
+### 3. Unkey — API Key Management + Audit Trail
+
+Per-action audit trail with ephemeral keys and session-scoped kill switches.
+
+- **Ephemeral keys** — Every autonomous action generates a unique API key with 24-hour expiry + metadata
+- **Audit trail** — Complete traceability: each key ID maps to exactly one action
+- **Kill switch** — Revoke all keys for a session in one call, disabling all actions from that meeting
+- **Session isolation** — Keys tracked per-session in memory for fast lookup
+
+**Code:** [`backend/sponsor_unkey.py`](backend/sponsor_unkey.py)
+
+---
+
+## Google Cloud Services
+
+| Service | Purpose | Code |
+|---------|---------|------|
+| **Gemini API** (`gemini-3-flash-preview`) | Transcript understanding, document revision, NL-to-SQL | [`understanding.py`](backend/understanding.py), [`documents.py`](backend/documents.py), [`bigquery.py`](backend/bigquery.py) |
+| **Cloud Speech-to-Text v1** | Real-time streaming transcription (interim + final) | [`voice.py`](backend/voice.py) |
+| **Cloud Vision API** | Face detection + emotion analysis | [`vision.py`](backend/vision.py) |
+| **Google Calendar API** | Create events from spoken meeting requests | [`actions.py`](backend/actions.py) |
+| **Gmail API** | Send meeting summary emails | [`email_summary.py`](backend/email_summary.py) |
+| **BigQuery** | NL-to-SQL report generation | [`bigquery.py`](backend/bigquery.py) |
+| **Cloud Run** | Production deployment | [`Dockerfile`](Dockerfile) |
+
+---
 
 ## How It Works
 
 1. **You speak** — browser captures 16kHz PCM audio via WebSocket
 2. **Cloud STT** streams interim + final transcripts in ~300ms
-3. **Gemini** extracts structured data: commitments, meeting requests, document changes, sentiment
-4. **Cloud Vision** reads facial sentiment from your webcam
-5. **Actions fire automatically** — Calendar events, Slack messages, document revisions
-6. **Meeting ends** — Gmail sends a full summary email to all participants
+3. **Gemini** extracts structured data: commitments, meeting requests, document changes
+4. **Cloud Vision** reads facial sentiment from your webcam (green/red/gray overlay)
+5. **Actions fire automatically** — Calendar events, Slack messages, document revisions, and **live Looker Studio reports** (Gemini converts natural language → SQL → BigQuery query → interactive HTML report with Chart.js charts + Looker Studio link, posted to Slack in seconds)
+6. **Sponsor pipeline** — Railtracks routes through specialist agents, Unkey generates audit keys, DigitalOcean archives to Knowledge Base
+7. **Meeting ends** — Gmail sends a full summary email; transcript archived to DO Knowledge Base
 
-Each action card in the UI is **linked to facial sentiment** at capture time — if someone commits to something while looking uncertain, the card flags it.
+---
 
-## Architecture
-
-See [`submission-materials/architecture-diagram.md`](submission-materials/architecture-diagram.md) for the full Mermaid diagram and data flow timeline.
-
-See [`submission-materials/google-cloud-deployment.md`](submission-materials/google-cloud-deployment.md) for a complete catalog of every Google API call with file/line references.
-
-## Quick Start (Local)
+## Quick Start
 
 ### Prerequisites
 
 - Python 3.12+
-- A GCP project with Speech-to-Text, Vision, Calendar, and Gmail APIs enabled
-- A Gemini API key (paid tier recommended — free tier caps at 20 req/day)
-- A Slack workspace with a bot token
+- GCP project with Speech-to-Text, Vision, Calendar, Gmail, and BigQuery APIs enabled
+- Gemini API key
+- Slack workspace with a bot token
 
 ### 1. Clone and configure
 
@@ -51,32 +122,33 @@ cd meeting-agent
 cp .env.example .env
 ```
 
-Fill in `.env`:
+### 2. Environment variables
 
 | Variable | Description |
 |----------|-------------|
-| `GOOGLE_API_KEY` | Gemini API key (paid tier) |
-| `GOOGLE_CLOUD_PROJECT` | GCP project ID for Vision + STT billing |
-| `SLACK_BOT_TOKEN` | Slack bot token (`xoxb-...`) with `chat:write`, `files:write` scopes |
-| `SLACK_CHANNEL` | Target Slack channel (e.g. `#product-launch`) |
-| `GOOGLE_CALENDAR_TOKEN_JSON` | OAuth2 token JSON — see step 2 |
+| `GOOGLE_API_KEY` | Gemini API key |
+| `GOOGLE_CLOUD_PROJECT` | GCP project ID |
+| `SLACK_BOT_TOKEN` | Slack bot token (`xoxb-...`) |
+| `SLACK_CHANNEL` | Target Slack channel |
+| `GOOGLE_CALENDAR_TOKEN_JSON` | OAuth2 token JSON (see below) |
+| `DO_MODEL_ACCESS_KEY` | DigitalOcean inference API key |
+| `UNKEY_ROOT_KEY` | Unkey root key |
+| `UNKEY_API_ID` | Unkey API ID |
 
-### 2. Generate Calendar + Gmail OAuth2 token (one-time)
+### 3. Generate Calendar + Gmail OAuth2 token
 
 ```bash
-# Download credentials.json from GCP Console → APIs & Services → Credentials → OAuth 2.0 Client IDs → Desktop app
 python scripts/get_calendar_token.py
-# Complete the browser auth flow (grant Calendar + Gmail permissions)
-# Copy the printed JSON into .env as GOOGLE_CALENDAR_TOKEN_JSON=<paste here>
+# Complete browser auth flow → copy JSON into .env
 ```
 
-### 3. Authenticate for Cloud Vision + Speech-to-Text
+### 4. Authenticate for Cloud Vision + Speech-to-Text
 
 ```bash
 gcloud auth application-default login
 ```
 
-### 4. Install dependencies and run
+### 5. Install and run
 
 ```bash
 pip install -r requirements.txt
@@ -84,7 +156,7 @@ uvicorn backend.main:app --reload --port 8080
 # Open http://localhost:8080
 ```
 
-## Deploy to Google Cloud Run
+## Deploy to Cloud Run
 
 ```bash
 gcloud run deploy meeting-agent \
@@ -92,42 +164,50 @@ gcloud run deploy meeting-agent \
   --region us-central1 \
   --allow-unauthenticated \
   --set-env-vars \
-    GOOGLE_API_KEY=<your-key>,\
-    GOOGLE_CLOUD_PROJECT=<your-project>,\
-    SLACK_BOT_TOKEN=<your-token>,\
-    SLACK_CHANNEL=<your-channel>,\
-    GOOGLE_CALENDAR_TOKEN_JSON='<your-token-json>'
+    GOOGLE_API_KEY=<key>,\
+    GOOGLE_CLOUD_PROJECT=<project>,\
+    SLACK_BOT_TOKEN=<token>,\
+    SLACK_CHANNEL=<channel>,\
+    GOOGLE_CALENDAR_TOKEN_JSON='<json>',\
+    DO_MODEL_ACCESS_KEY=<key>,\
+    UNKEY_ROOT_KEY=<key>,\
+    UNKEY_API_ID=<id>
 ```
 
-The service will be available at the URL printed by `gcloud run deploy`.
+---
 
 ## Project Structure
 
 ```
 backend/
-  main.py              # FastAPI app: WebSocket handler, API endpoints, session lifecycle
-  voice.py             # VoicePipeline: Cloud STT v1 streaming with auto-reconnect
-  understanding.py     # TranscriptBuffer + Gemini understanding extraction
-  actions.py           # ActionSession: Slack, Calendar, document dispatch
-  documents.py         # Marketing brief + Gemini-powered revision
-  vision.py            # Cloud Vision face detection + sentiment
-  email_summary.py     # Gmail meeting summary sender
-  contracts.py         # Shared types and message constructors
-  session_state.py     # Per-session state registry
+  main.py                 # FastAPI app, WebSocket handler, session lifecycle
+  voice.py                # Cloud STT v1 streaming with 4-min auto-reconnect
+  understanding.py        # Gemini understanding + TranscriptBuffer
+  actions.py              # Slack, Calendar, document, task dispatch
+  documents.py            # Marketing brief + Gemini-powered revision
+  vision.py               # Cloud Vision face detection + sentiment
+  bigquery.py             # NL-to-SQL report generation
+  email_summary.py        # Gmail meeting summary
+  sponsor_digitalocean.py # DO Knowledge Base + inference
+  sponsor_railtracks.py   # Railtracks multi-agent orchestration
+  sponsor_unkey.py        # Unkey audit trail + kill switch
+  contracts.py            # Shared types and message constructors
+  session_state.py        # Per-session state registry
 static/
-  index.html           # Dark theme UI (Tailwind CSS)
-  app.js               # App entry point
-  app/                 # Modular JS: core, render, documents, media, session
+  index.html              # Dark theme UI (Tailwind CSS)
+  chat.html               # DO Knowledge Base chat interface
+  app.js                  # App entry point
+  app/                    # Modular JS: core, render, media, session, sponsors
 scripts/
-  get_calendar_token.py  # OAuth2 flow for Calendar + Gmail scopes
-submission-materials/
-  google-cloud-deployment.md  # Complete Google API call catalog
-  architecture-diagram.md     # Mermaid architecture diagram
-  blog-post.md                # Development blog post
+  get_calendar_token.py   # OAuth2 flow for Calendar + Gmail
 ```
 
-## Submission Materials
+## Built With
 
-- [Google Cloud Deployment Reference](submission-materials/google-cloud-deployment.md) — every Google API call with file and line numbers
-- [Architecture Diagram](submission-materials/architecture-diagram.md) — Mermaid system flow + data flow timeline
-- [Blog Post](submission-materials/blog-post.md) — development journey and technical deep dive
+**Languages:** Python 3.12, JavaScript (ES2020+), HTML5, CSS (Tailwind)
+
+**Google Cloud:** Gemini API, Cloud Speech-to-Text v1, Cloud Vision API, Calendar API, Gmail API, BigQuery, Cloud Run
+
+**Sponsors:** DigitalOcean (Knowledge Base + Inference), Railtracks (Agentic Framework), Unkey (API Key Management)
+
+**Libraries:** FastAPI, Uvicorn, Slack SDK, OpenAI SDK, WebSocket, Docker, Terraform

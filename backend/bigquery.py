@@ -43,82 +43,178 @@ NL_TO_SQL_MODEL = "gemini-3-flash-preview"
 DATASET_ID = "marketing_data"
 TABLE_ID = "campaigns"
 
-CHANNELS = ["organic_search", "paid_search", "paid_social", "email", "direct", "referral"]
+CHANNELS = ["organic_search", "paid_search", "paid_social", "email", "direct", "referral", "display", "affiliate", "content_syndication"]
 SEGMENTS = ["enterprise", "mid_market", "smb", "startup"]
-KEY_ACCOUNTS = [None, None, "Acme Corp", "Globex", "Initech", "Umbrella", "Wonka Industries"]
+REGIONS = ["North America", "Europe", "APAC", "LATAM", "Middle East"]
+CAMPAIGNS = [
+    "Spring Launch 2025", "Summer Brand Push", "Fall Retargeting", "Holiday Blitz Q4",
+    "Product Launch Alpha", "Webinar Series", "ABM Enterprise", "Social Viral",
+    "SEO Content Push", "Partner Co-Marketing", "Trade Show Follow-Up",
+    "Customer Win-Back", "New Market Entry APAC", "Brand Awareness Q1 2026",
+    "Performance Max", "Influencer Collab", "Free Trial Promo",
+]
+KEY_ACCOUNTS = [
+    None, None, None, None,  # ~57% no key account
+    "Acme Corp", "Globex International", "Initech Solutions", "Umbrella Holdings",
+    "Wonka Industries", "Stark Enterprises", "Wayne Corp", "Cyberdyne Systems",
+    "Soylent Corp", "Massive Dynamic", "Aperture Science",
+]
+PRODUCTS = ["Platform Pro", "Analytics Suite", "API Gateway", "Starter Plan", "Enterprise Cloud"]
+DEVICE_TYPES = ["desktop", "mobile", "tablet"]
+CREATIVE_TYPES = ["video", "static_image", "carousel", "text_only", "interactive"]
 
 SCHEMA = [
     bigquery.SchemaField("date", "DATE"),
     bigquery.SchemaField("channel", "STRING"),
+    bigquery.SchemaField("campaign_name", "STRING"),
     bigquery.SchemaField("segment", "STRING"),
+    bigquery.SchemaField("region", "STRING"),
     bigquery.SchemaField("key_account", "STRING", mode="NULLABLE"),
+    bigquery.SchemaField("product", "STRING"),
+    bigquery.SchemaField("device_type", "STRING"),
+    bigquery.SchemaField("creative_type", "STRING"),
     bigquery.SchemaField("spend", "FLOAT"),
+    bigquery.SchemaField("impressions", "INTEGER"),
+    bigquery.SchemaField("clicks", "INTEGER"),
     bigquery.SchemaField("conversions", "INTEGER"),
     bigquery.SchemaField("revenue", "FLOAT"),
     bigquery.SchemaField("cac", "FLOAT"),
-    bigquery.SchemaField("impression_count", "INTEGER"),
-    bigquery.SchemaField("click_count", "INTEGER"),
+    bigquery.SchemaField("ctr", "FLOAT"),
+    bigquery.SchemaField("conversion_rate", "FLOAT"),
     bigquery.SchemaField("roi", "FLOAT"),
+    bigquery.SchemaField("avg_deal_size", "FLOAT"),
+    bigquery.SchemaField("pipeline_value", "FLOAT"),
+    bigquery.SchemaField("new_leads", "INTEGER"),
+    bigquery.SchemaField("qualified_leads", "INTEGER"),
 ]
 
 SCHEMA_DDL = """Table: `{project}.marketing_data.campaigns`
 Columns:
-  date           DATE          -- campaign date
-  channel        STRING        -- one of: organic_search, paid_search, paid_social, email, direct, referral
-  segment        STRING        -- one of: enterprise, mid_market, smb, startup
-  key_account    STRING (NULL) -- named account or NULL
-  spend          FLOAT         -- dollars spent
-  conversions    INTEGER       -- number of conversions
-  revenue        FLOAT         -- dollars earned
-  cac            FLOAT         -- customer acquisition cost (spend / conversions)
-  impression_count INTEGER     -- ad impressions
-  click_count    INTEGER       -- ad clicks
-  roi            FLOAT         -- return on investment ((revenue - spend) / spend)
+  date              DATE       -- campaign date
+  channel           STRING     -- marketing channel (organic_search, paid_search, paid_social, email, direct, referral, display, affiliate, content_syndication)
+  campaign_name     STRING     -- campaign name (e.g. "Spring Launch 2025", "Holiday Blitz Q4")
+  segment           STRING     -- customer segment (enterprise, mid_market, smb, startup)
+  region            STRING     -- geographic region (North America, Europe, APAC, LATAM, Middle East)
+  key_account       STRING     -- named account or NULL
+  product           STRING     -- product line (Platform Pro, Analytics Suite, API Gateway, Starter Plan, Enterprise Cloud)
+  device_type       STRING     -- device (desktop, mobile, tablet)
+  creative_type     STRING     -- ad creative type (video, static_image, carousel, text_only, interactive)
+  spend             FLOAT      -- dollars spent
+  impressions       INTEGER    -- ad impressions served
+  clicks            INTEGER    -- ad clicks
+  conversions       INTEGER    -- completed conversions / purchases
+  revenue           FLOAT      -- revenue generated ($)
+  cac               FLOAT      -- customer acquisition cost (spend / conversions)
+  ctr               FLOAT      -- click-through rate (clicks / impressions)
+  conversion_rate   FLOAT      -- conversion rate (conversions / clicks)
+  roi               FLOAT      -- return on investment ((revenue - spend) / spend)
+  avg_deal_size     FLOAT      -- average deal size ($)
+  pipeline_value    FLOAT      -- total pipeline value generated ($)
+  new_leads         INTEGER    -- new leads generated
+  qualified_leads   INTEGER    -- marketing qualified leads (MQLs)
 """
 
 # ---------------------------------------------------------------------------
 # Sample data generator
 # ---------------------------------------------------------------------------
 
+import math
 
-def _generate_sample_rows(num_days: int = 90) -> list[dict]:
-    """Generate realistic-looking marketing data for seeding."""
+
+def _generate_sample_rows(num_days: int = 365) -> list[dict]:
+    """Generate a rich, realistic marketing dataset for 365 days."""
     rows = []
     base = date.today() - timedelta(days=num_days)
-    rng = random.Random(42)  # deterministic seed for reproducibility
+    rng = random.Random(42)
+
+    # Channel-specific base metrics
+    channel_profiles = {
+        "paid_search":         {"spend": 2200, "ctr_base": 0.035, "conv_base": 0.04, "deal": 380},
+        "paid_social":         {"spend": 1800, "ctr_base": 0.012, "conv_base": 0.025, "deal": 290},
+        "organic_search":      {"spend": 120,  "ctr_base": 0.045, "conv_base": 0.055, "deal": 420},
+        "email":               {"spend": 250,  "ctr_base": 0.08,  "conv_base": 0.065, "deal": 350},
+        "direct":              {"spend": 80,   "ctr_base": 0.06,  "conv_base": 0.07,  "deal": 510},
+        "referral":            {"spend": 100,  "ctr_base": 0.05,  "conv_base": 0.08,  "deal": 600},
+        "display":             {"spend": 1400, "ctr_base": 0.005, "conv_base": 0.012, "deal": 260},
+        "affiliate":           {"spend": 500,  "ctr_base": 0.025, "conv_base": 0.035, "deal": 310},
+        "content_syndication": {"spend": 350,  "ctr_base": 0.02,  "conv_base": 0.03,  "deal": 340},
+    }
+
+    # Segment revenue multipliers
+    segment_mult = {"enterprise": 3.5, "mid_market": 1.8, "smb": 1.0, "startup": 0.6}
 
     for day_offset in range(num_days):
         d = base + timedelta(days=day_offset)
-        for channel in CHANNELS:
+        day_of_year = d.timetuple().tm_yday
+        weekday = d.weekday()
+
+        # Seasonality: higher in Q4 (holidays), dip in summer
+        season = 1.0 + 0.3 * math.sin(2 * math.pi * (day_of_year - 90) / 365)
+        # Weekend dip for B2B channels
+        weekend_factor = 0.4 if weekday >= 5 else 1.0
+        # Month-over-month growth trend (~15% annual)
+        growth = 1.0 + 0.15 * (day_offset / 365)
+
+        # Each day: 2-4 random channel/segment/region combos (not all combos every day)
+        combos_per_day = rng.randint(8, 18)
+        for _ in range(combos_per_day):
+            channel = rng.choice(CHANNELS)
+            profile = channel_profiles[channel]
             segment = rng.choice(SEGMENTS)
+            region = rng.choices(REGIONS, weights=[40, 25, 20, 10, 5])[0]
             key_account = rng.choice(KEY_ACCOUNTS)
+            product = rng.choice(PRODUCTS)
+            device = rng.choices(DEVICE_TYPES, weights=[55, 35, 10])[0]
+            creative = rng.choice(CREATIVE_TYPES)
+            campaign = rng.choice(CAMPAIGNS)
 
-            # Channel-specific spend ranges
-            spend_base = {
-                "paid_search": 800, "paid_social": 600, "email": 100,
-                "organic_search": 50, "direct": 30, "referral": 40,
-            }[channel]
-            spend = round(spend_base * rng.uniform(0.5, 1.8), 2)
+            # Region adjustments
+            region_mult = {"North America": 1.0, "Europe": 0.85, "APAC": 0.7, "LATAM": 0.5, "Middle East": 0.4}[region]
 
-            impressions = int(spend * rng.uniform(80, 200))
-            clicks = int(impressions * rng.uniform(0.01, 0.08))
-            conversions = max(1, int(clicks * rng.uniform(0.02, 0.15)))
-            revenue = round(conversions * rng.uniform(50, 500), 2)
-            cac = round(spend / conversions, 2)
+            # Compute metrics with variance
+            base_spend = profile["spend"] * rng.uniform(0.3, 2.0) * season * growth * region_mult
+            if channel in ("organic_search", "direct", "referral"):
+                base_spend *= 0.15  # low-spend organic channels
+            spend = round(base_spend * weekend_factor, 2)
+
+            impressions = max(10, int(spend * rng.uniform(60, 300)))
+            ctr = profile["ctr_base"] * rng.uniform(0.5, 1.8)
+            clicks = max(1, int(impressions * ctr))
+            conv_rate = profile["conv_base"] * rng.uniform(0.4, 2.0)
+            conversions = max(0, int(clicks * conv_rate))
+
+            deal_size = profile["deal"] * segment_mult[segment] * rng.uniform(0.6, 1.6)
+            revenue = round(conversions * deal_size, 2) if conversions > 0 else 0
+            cac = round(spend / conversions, 2) if conversions > 0 else 0
             roi = round((revenue - spend) / spend, 4) if spend > 0 else 0.0
+
+            new_leads = max(0, int(clicks * rng.uniform(0.05, 0.25)))
+            qualified_leads = max(0, int(new_leads * rng.uniform(0.15, 0.5)))
+            pipeline = round(qualified_leads * deal_size * rng.uniform(1.5, 4.0), 2)
 
             rows.append({
                 "date": d.isoformat(),
                 "channel": channel,
+                "campaign_name": campaign,
                 "segment": segment,
+                "region": region,
                 "key_account": key_account,
+                "product": product,
+                "device_type": device,
+                "creative_type": creative,
                 "spend": spend,
+                "impressions": impressions,
+                "clicks": clicks,
                 "conversions": conversions,
                 "revenue": revenue,
                 "cac": cac,
-                "impression_count": impressions,
-                "click_count": clicks,
+                "ctr": round(ctr, 6),
+                "conversion_rate": round(conv_rate, 6),
                 "roi": roi,
+                "avg_deal_size": round(deal_size, 2),
+                "pipeline_value": pipeline,
+                "new_leads": new_leads,
+                "qualified_leads": qualified_leads,
             })
     return rows
 
@@ -128,8 +224,8 @@ def _generate_sample_rows(num_days: int = 90) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
-async def setup_dataset() -> str:
-    """Create dataset + table if needed, seed sample data if empty. Returns status."""
+async def setup_dataset(force_reseed: bool = False) -> str:
+    """Create dataset + table if needed, seed sample data if empty or forced. Returns status."""
     def _sync_setup() -> str:
         client = _get_bq()
         project = client.project
@@ -141,8 +237,14 @@ async def setup_dataset() -> str:
         client.create_dataset(dataset, exists_ok=True)
         logger.info("Dataset %s ready", dataset_ref)
 
-        # Create table
         table_ref = f"{dataset_ref}.{TABLE_ID}"
+
+        if force_reseed:
+            # Drop existing table and recreate with new schema
+            client.delete_table(table_ref, not_found_ok=True)
+            logger.info("Dropped existing table %s for reseed", table_ref)
+
+        # Create table
         table = bigquery.Table(table_ref, schema=SCHEMA)
         client.create_table(table, exists_ok=True)
 

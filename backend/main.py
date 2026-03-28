@@ -453,12 +453,14 @@ async def railtracks_status():
 
 
 @app.post("/api/bigquery/setup")
-async def bigquery_setup():
+async def bigquery_setup(request: Request):
     """Create BigQuery dataset, table, and seed sample marketing data."""
     if not bq_available():
         return JSONResponse({"error": "GOOGLE_CLOUD_PROJECT not set"}, status_code=503)
     try:
-        status = await setup_dataset()
+        body = await request.json() if request.headers.get("content-type", "").startswith("application/json") else {}
+        force = body.get("force_reseed", False)
+        status = await setup_dataset(force_reseed=force)
         return JSONResponse({"status": status})
     except Exception as exc:
         logger.error("BigQuery setup failed: %s", exc)

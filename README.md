@@ -66,16 +66,16 @@ Multi-agent orchestration with sentiment-gated routing across 4 specialist nodes
 
 **Code:** [`backend/sponsor_railtracks.py`](backend/sponsor_railtracks.py)
 
-### 3. Unkey — API Key Management + Audit Trail
+### 3. assistant-ui — Chat Interface
 
-Per-action audit trail with ephemeral keys and session-scoped kill switches.
+Conversational UI for querying the DigitalOcean Knowledge Base during and after meetings.
 
-- **Ephemeral keys** — Every autonomous action generates a unique API key with 24-hour expiry + metadata
-- **Audit trail** — Complete traceability: each key ID maps to exactly one action
-- **Kill switch** — Revoke all keys for a session in one call, disabling all actions from that meeting
-- **Session isolation** — Keys tracked per-session in memory for fast lookup
+- **Real-time chat** — Ask natural language questions about past meetings ("What did we commit to last week?") and get instant answers from the KB
+- **Meeting context** — Chat is scoped to archived meeting data, providing relevant prior decisions and open commitments
+- **Branded integration** — assistant-ui badge in the KB panel links directly to the chat interface
+- **Seamless UX** — Chat opens in a dedicated view with dark theme styling consistent with the main app
 
-**Code:** [`backend/sponsor_unkey.py`](backend/sponsor_unkey.py)
+**Code:** [`static/chat.html`](static/chat.html)
 
 ---
 
@@ -132,8 +132,6 @@ cp .env.example .env
 | `SLACK_CHANNEL` | Target Slack channel |
 | `GOOGLE_CALENDAR_TOKEN_JSON` | OAuth2 token JSON (see below) |
 | `DO_MODEL_ACCESS_KEY` | DigitalOcean inference API key |
-| `UNKEY_ROOT_KEY` | Unkey root key |
-| `UNKEY_API_ID` | Unkey API ID |
 
 ### 3. Generate Calendar + Gmail OAuth2 token
 
@@ -170,8 +168,6 @@ gcloud run deploy meeting-agent \
     SLACK_CHANNEL=<channel>,\
     GOOGLE_CALENDAR_TOKEN_JSON='<json>',\
     DO_MODEL_ACCESS_KEY=<key>,\
-    UNKEY_ROOT_KEY=<key>,\
-    UNKEY_API_ID=<id>
 ```
 
 ---
@@ -208,6 +204,6 @@ scripts/
 
 **Google Cloud:** Gemini API, Cloud Speech-to-Text v1, Cloud Vision API, Calendar API, Gmail API, BigQuery, Cloud Run
 
-**Sponsors:** DigitalOcean (Knowledge Base + Inference), Railtracks (Agentic Framework), Unkey (API Key Management)
+**Sponsors:** DigitalOcean (Knowledge Base + Inference), Railtracks (Agentic Framework), assistant-ui (Chat Interface)
 
 **Libraries:** FastAPI, Uvicorn, Slack SDK, OpenAI SDK, WebSocket, Docker, Terraform

@@ -55,7 +55,7 @@ When the agent detects "Change the budget to $75K" or "Reallocate $5K from conte
 
 We integrated **3 sponsor tools** deeply into the agent's core functionality:
 
-### 1. DigitalOcean — Knowledge Base + Inference ($1K cash + credits prize)
+### 1. DigitalOcean — Knowledge Base + Inference
 
 **Integration:** Cross-meeting memory via DO Serverless Inference (OpenAI-compatible API at `inference.do-ai.run/v1/`) + in-memory Knowledge Base.
 
@@ -66,7 +66,7 @@ We integrated **3 sponsor tools** deeply into the agent's core functionality:
 
 **Files:** [`backend/sponsor_digitalocean.py`](backend/sponsor_digitalocean.py), [`static/chat.html`](static/chat.html)
 
-### 2. Railtracks — Agentic Framework ($1.3K cash prize)
+### 2. Railtracks — Agentic Framework
 
 **Integration:** Multi-agent orchestration with specialist nodes and sentiment-gated routing.
 
@@ -77,16 +77,16 @@ We integrated **3 sponsor tools** deeply into the agent's core functionality:
 
 **Files:** [`backend/sponsor_railtracks.py`](backend/sponsor_railtracks.py)
 
-### 3. Unkey — API Key Management + Audit Trail
+### 3. assistant-ui — Chat Interface
 
-**Integration:** Per-action audit trail with ephemeral API keys and session-scoped kill switches.
+**Integration:** Conversational UI for querying the DigitalOcean Knowledge Base during and after meetings.
 
-- **Ephemeral key generation** — Every autonomous action (Slack post, Calendar event, document revision) generates a unique API key with 24-hour expiry and metadata (action type, session, timestamp).
-- **Audit trail** — Complete traceability for every action the agent takes. Each key ID maps to exactly one action.
-- **Kill switch** — Revoke all API keys for a session in one call, instantly disabling all actions taken during that meeting.
-- **Session isolation** — Keys are tracked per-session in an in-memory index for fast lookup.
+- **Real-time chat** — Ask natural language questions about past meetings ("What did we commit to last week?") and get instant answers powered by DO's `llama3.3-70b-instruct` model.
+- **Meeting context** — Chat is scoped to archived meeting data, surfacing relevant prior decisions and open commitments.
+- **Branded integration** — assistant-ui badge in the KB panel links directly to the chat interface, keeping the experience seamless.
+- **Dark theme UX** — Consistent styling with the main app for a cohesive user experience.
 
-**Files:** [`backend/sponsor_unkey.py`](backend/sponsor_unkey.py)
+**Files:** [`static/chat.html`](static/chat.html)
 
 ## How we built it
 
@@ -111,7 +111,7 @@ We integrated **3 sponsor tools** deeply into the agent's core functionality:
 - **Multimodal sentiment as an intelligence layer** — not just transcription, but understanding *how* something was said (face) alongside *what* was said (voice).
 - **Production-deployed on Cloud Run** with real Google Calendar events being created, real Slack messages being posted, and real emails being sent.
 - **Clean modular architecture** — 15 backend modules, each under 350 lines, all fully async.
-- **Deep sponsor integration** — DigitalOcean (cross-meeting memory), Railtracks (multi-agent orchestration), and Unkey (per-action audit trail) are woven into the core pipeline, not bolted on.
+- **Deep sponsor integration** — DigitalOcean (cross-meeting memory), Railtracks (multi-agent orchestration), and assistant-ui (KB chat interface) are woven into the core pipeline, not bolted on.
 
 ## What we learned
 
@@ -119,7 +119,7 @@ We integrated **3 sponsor tools** deeply into the agent's core functionality:
 - **Gemini is remarkably good at structured extraction** from natural speech, but needs very explicit prompt engineering for math and brevity.
 - **Fire-and-forget async patterns** are essential for real-time agents. You can't block the audio pipeline while waiting for a Calendar API call.
 - **Debounce everything.** Vision API, transcript flushing, action dispatch — without careful debouncing, you hit rate limits instantly and waste API calls on partial data.
-- **Sponsor tools add real value when deeply integrated.** Cross-meeting memory (DO), multi-agent routing (Railtracks), and action audit trails (Unkey) each solve a genuine problem in the agent's pipeline.
+- **Sponsor tools add real value when deeply integrated.** Cross-meeting memory (DO), multi-agent routing (Railtracks), and a conversational KB interface (assistant-ui) each solve a genuine problem in the agent's pipeline.
 
 ## What's next for AI Meeting Autopilot
 
@@ -149,7 +149,7 @@ We integrated **3 sponsor tools** deeply into the agent's core functionality:
 **Sponsor Tools:**
 - DigitalOcean Serverless Inference + Knowledge Base
 - Railtracks Agentic Framework
-- Unkey API Key Management
+- assistant-ui Chat Interface
 
 **Infrastructure & Libraries:**
 - FastAPI + Uvicorn (async web server)

@@ -34,7 +34,7 @@ from backend.vision import analyze_frame
 from backend.voice import VoicePipeline
 from backend.sponsor_digitalocean import do_available, do_archive_meeting, kb_stats
 from backend.sponsor_railtracks import get_flow_status, run_meeting_flow
-from backend.bigquery import bq_available, generate_report, setup_dataset, run_query, nl_to_sql
+from backend.bigquery import bq_available, generate_report, get_report, setup_dataset, run_query, nl_to_sql
 
 app = FastAPI(title="Meeting Agent")
 
@@ -515,10 +515,23 @@ async def bigquery_query(request: Request):
         return JSONResponse({"error": "query is required"}, status_code=400)
     try:
         report = await generate_report(query)
+        # Build report URL relative to current host
+        report_id = report["report_id"]
+        report["report_url"] = f"/report/{report_id}"
         return JSONResponse(report)
     except Exception as exc:
         logger.error("BigQuery query failed: %s", exc)
         return JSONResponse({"error": str(exc)}, status_code=500)
+
+
+@app.get("/report/{report_id}")
+async def view_report(report_id: str):
+    """Serve an LLM-generated HTML report with charts."""
+    from fastapi.responses import HTMLResponse
+    report = get_report(report_id)
+    if not report:
+        return HTMLResponse("<h1>Report not found</h1><p>This report may have expired.</p>", status_code=404)
+    return HTMLResponse(report["html"])
 
 
 @app.post("/api/bigquery/sql")

@@ -238,54 +238,118 @@ def looker_studio_url(project_id: str, dataset_id: str, table_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Report storage — in-memory for hackathon
+# ---------------------------------------------------------------------------
+
+_reports: dict[str, dict] = {}  # report_id → {html, query, sql, summary, created}
+
+
+def get_report(report_id: str) -> dict | None:
+    return _reports.get(report_id)
+
+
+# ---------------------------------------------------------------------------
 # End-to-end report generation
 # ---------------------------------------------------------------------------
 
 
 async def generate_report(query: str) -> dict:
-    """NL question → SQL → execute → formatted report dict."""
+    """NL question → SQL → execute → LLM-generated HTML report with charts."""
+    import uuid
+    from datetime import datetime, timezone
+
     sql = await nl_to_sql(query)
     logger.info("Generated SQL: %s", sql)
 
     results = await run_query(sql)
 
-    project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
-    explore_url = looker_studio_url(project, DATASET_ID, TABLE_ID)
+    # LLM generates a full interactive HTML report with charts
+    html, summary = await _build_html_report(query, sql, results)
 
-    # Build a short summary via Gemini
-    summary = await _summarize_results(query, results)
+    report_id = str(uuid.uuid4())[:8]
+    _reports[report_id] = {
+        "html": html,
+        "query": query,
+        "sql": sql,
+        "summary": summary,
+        "results": results,
+        "row_count": len(results),
+        "created": datetime.now(timezone.utc).isoformat(),
+    }
 
     return {
+        "report_id": report_id,
         "sql": sql,
         "results": results,
-        "looker_url": explore_url,
         "summary": summary,
+        "row_count": len(results),
     }
 
 
-async def _summarize_results(query: str, results: list[dict]) -> str:
-    """Generate a short text summary of query results using Gemini."""
+async def _build_html_report(query: str, sql: str, results: list[dict]) -> tuple[str, str]:
+    """Use Gemini to generate a complete HTML report with Chart.js charts."""
     if not results:
-        return "No results found for your query."
+        empty_html = f"""<!DOCTYPE html>
+<html><head><title>Report</title></head>
+<body style="font-family:system-ui;max-width:900px;margin:40px auto;padding:20px">
+<h1>Report: {query}</h1><p>No data found for this query.</p>
+<pre>{sql}</pre></body></html>"""
+        return empty_html, "No results found."
 
-    # Truncate for prompt — send first 20 rows max
-    preview = results[:20]
+    preview = results[:50]
+    columns = list(results[0].keys()) if results else []
 
-    prompt = f"""Summarize these query results in 2-3 sentences for a business user.
+    prompt = f"""You are a data visualization expert. Generate a COMPLETE, self-contained HTML page
+that presents the query results as an interactive report with charts.
 
-Question: {query}
-Results ({len(results)} rows, showing first {len(preview)}):
+USER'S QUESTION: {query}
+SQL USED: {sql}
+COLUMNS: {columns}
+DATA ({len(results)} rows, showing {len(preview)}):
 {preview}
 
-Summary:"""
+REQUIREMENTS:
+1. Use Chart.js from CDN (https://cdn.jsdelivr.net/npm/chart.js) — no other dependencies
+2. Pick the BEST chart types for this data (bar, line, pie, doughnut — whatever fits)
+3. Include 1-3 charts that answer the user's question from different angles
+4. Add a data table below the charts showing the raw results
+5. Include a 2-3 sentence executive summary at the top explaining the key insights
+6. Dark theme: background #1a1a2e, cards #16213e, text #e0e0e0, accent colors for charts
+7. Professional layout: centered, max-width 1000px, cards with subtle borders
+8. Show the SQL query used in a collapsible section
+9. Mobile-responsive
+10. Title should reflect what the user asked for
+
+Return ONLY the complete HTML (<!DOCTYPE html> to </html>). No markdown fences, no explanation."""
 
     def _call() -> str:
         client = _get_genai()
         resp = client.models.generate_content(model=NL_TO_SQL_MODEL, contents=prompt)
+        text = resp.text.strip()
+        # Strip markdown fences if present
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+        if text.endswith("```"):
+            text = text[:-3].rstrip()
+        if text.lower().startswith("html"):
+            text = text[4:].lstrip()
+        return text
+
+    # Generate summary in parallel-ish (same thread pool)
+    summary_prompt = f"""Summarize these query results in 2-3 sentences for a business user.
+Question: {query}
+Results ({len(results)} rows, showing first {min(20, len(results))}):
+{results[:20]}
+Summary:"""
+
+    def _call_summary() -> str:
+        client = _get_genai()
+        resp = client.models.generate_content(model=NL_TO_SQL_MODEL, contents=summary_prompt)
         return resp.text.strip()
 
-    try:
-        return await asyncio.to_thread(_call)
-    except Exception as e:
-        logger.warning("Summary generation failed: %s", e)
-        return f"Query returned {len(results)} rows."
+    html, summary = await asyncio.gather(
+        asyncio.to_thread(_call),
+        asyncio.to_thread(_call_summary),
+    )
+
+    return html, summary

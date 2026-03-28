@@ -366,9 +366,17 @@ class ActionSession:
 
         try:
             report = await generate_report(query)
-            # Post report summary to Slack
-            slack_text = f"📊 *Report Generated*\n*Query:* {query}\n*Results:* {len(report.get('results', []))} rows\n{report.get('summary', '')}\n\n🔗 <{report.get('looker_url', '')}|Open in Looker Studio>"
+            report_id = report.get("report_id", "")
+            report_url = f"/report/{report_id}"
+            slack_text = (
+                f"📊 *Report Generated*\n"
+                f"*Query:* {query}\n"
+                f"*Results:* {report.get('row_count', 0)} rows\n"
+                f"{report.get('summary', '')}\n\n"
+                f"🔗 View full interactive report at: /report/{report_id}"
+            )
             await _post_slack(slack_text)
+            report["report_url"] = report_url
             return [make_action_result("report", report, "sent", sentiment=sent)]
         except Exception as exc:
             logger.error("Report generation failed: %s", exc)

@@ -224,16 +224,19 @@ async def run_query(sql: str) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
-def looker_studio_url(project_id: str, dataset_id: str, table_id: str) -> str:
-    """Generate a Looker Studio explore URL pre-connected to a BigQuery table."""
+def looker_studio_url(project_id: str, sql: str, report_name: str = "Meeting Agent Report") -> str:
+    """Generate a Looker Studio Linking API URL with a CUSTOM_QUERY.
+
+    Uses the correct format (no ds0 alias — bare ds.* params for single data source).
+    The SQL is embedded so Looker Studio opens with the exact query results.
+    """
     return (
         "https://lookerstudio.google.com/reporting/create"
-        f"?c.mode=edit"
-        f"&ds.ds0.connector=bigQuery"
-        f"&ds.ds0.projectId={quote(project_id)}"
-        f"&ds.ds0.type=TABLE"
-        f"&ds.ds0.datasetId={quote(dataset_id)}"
-        f"&ds.ds0.tableId={quote(table_id)}"
+        f"?ds.connector=bigQuery"
+        f"&ds.type=CUSTOM_QUERY"
+        f"&ds.projectId={quote(project_id)}"
+        f"&ds.sql={quote(sql)}"
+        f"&r.reportName={quote(report_name)}"
     )
 
 
@@ -277,12 +280,16 @@ async def generate_report(query: str) -> dict:
         "created": datetime.now(timezone.utc).isoformat(),
     }
 
+    project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+    looker_url = looker_studio_url(project, sql, f"Report: {query[:60]}")
+
     return {
         "report_id": report_id,
         "sql": sql,
         "results": results,
         "summary": summary,
         "row_count": len(results),
+        "looker_url": looker_url,
     }
 
 

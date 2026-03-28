@@ -93,19 +93,44 @@ window.MeetingAgent = window.MeetingAgent || {};
     if (!container) return;
     container.innerHTML = '';
     for (const report of sponsorState.reports) {
-      const el = document.createElement('a');
-      el.href = report.report_url;
-      el.target = '_blank';
-      el.className = 'flex items-center gap-2 p-1.5 rounded bg-primary/5 hover:bg-primary/15 border border-primary/20 transition-colors card-enter cursor-pointer';
-      el.innerHTML = `
-        <span class="material-symbols-outlined text-sm text-primary flex-shrink-0">bar_chart</span>
-        <div class="min-w-0 flex-1">
-          <p class="text-[10px] text-white font-medium truncate">${escapeHtml(report.query || 'Report')}</p>
-          <p class="text-[9px] text-slate-400 truncate">${report.row_count || 0} rows · ${escapeHtml((report.summary || '').slice(0, 60))}</p>
-        </div>
-        <span class="material-symbols-outlined text-[12px] text-primary/60 flex-shrink-0">open_in_new</span>
-      `;
-      container.appendChild(el);
+      const wrapper = document.createElement('div');
+      wrapper.className = 'flex flex-col gap-1 p-1.5 rounded bg-primary/5 border border-primary/20 card-enter';
+
+      // Report query title
+      const title = document.createElement('p');
+      title.className = 'text-[10px] text-white font-medium truncate';
+      title.textContent = report.query || 'Report';
+      wrapper.appendChild(title);
+
+      const meta = document.createElement('p');
+      meta.className = 'text-[9px] text-slate-400 truncate';
+      meta.textContent = `${report.row_count || 0} rows · ${(report.summary || '').slice(0, 60)}`;
+      wrapper.appendChild(meta);
+
+      // Links row
+      const links = document.createElement('div');
+      links.className = 'flex items-center gap-2 mt-0.5';
+
+      // Chart.js report link
+      const chartLink = document.createElement('a');
+      chartLink.href = report.report_url;
+      chartLink.target = '_blank';
+      chartLink.className = 'flex items-center gap-1 text-[9px] text-primary hover:text-white transition-colors';
+      chartLink.innerHTML = '<span class="material-symbols-outlined text-[11px]">bar_chart</span>Report';
+      links.appendChild(chartLink);
+
+      // Looker Studio link
+      if (report.looker_url) {
+        const lookerLink = document.createElement('a');
+        lookerLink.href = report.looker_url;
+        lookerLink.target = '_blank';
+        lookerLink.className = 'flex items-center gap-1 text-[9px] text-cyan-400 hover:text-white transition-colors';
+        lookerLink.innerHTML = '<span class="material-symbols-outlined text-[11px]">analytics</span>Looker Studio';
+        links.appendChild(lookerLink);
+      }
+
+      wrapper.appendChild(links);
+      container.appendChild(wrapper);
     }
   }
 
@@ -332,6 +357,17 @@ window.MeetingAgent = window.MeetingAgent || {};
 
     updateKBCounter();
     renderFlowAgents();
+
+    // Fetch KB status on init so it doesn't stay "Offline" by default
+    fetch('/api/kb/status')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data) {
+          updateKBStatus({ connected: data.available, meetings_archived: data.documents || 0 });
+          updateMemoryStatus({ connected: data.available });
+        }
+      })
+      .catch(() => { /* KB status fetch failed — stay offline */ });
   }
 
   window.MeetingAgent.sponsors = {

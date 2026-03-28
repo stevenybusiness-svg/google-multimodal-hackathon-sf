@@ -369,12 +369,14 @@ class ActionSession:
             report = await generate_report(query)
             report_id = report.get("report_id", "")
             report_url = f"/report/{report_id}"
+            looker_url = report.get("looker_url", "")
             slack_text = (
                 f"📊 *Report Generated*\n"
                 f"*Query:* {query}\n"
                 f"*Results:* {report.get('row_count', 0)} rows\n"
                 f"{report.get('summary', '')}\n\n"
-                f"🔗 View full interactive report at: /report/{report_id}"
+                f"📈 <{looker_url}|Open in Looker Studio>\n"
+                f"🔗 View interactive report at: /report/{report_id}"
             )
             await _post_slack(slack_text)
             report["report_url"] = report_url
@@ -390,6 +392,7 @@ class ActionSession:
             ws_payload = {
                 "report_id": report_id,
                 "report_url": report_url,
+                "looker_url": looker_url,
                 "query": query,
                 "summary": report.get("summary", ""),
                 "row_count": report.get("row_count", 0),

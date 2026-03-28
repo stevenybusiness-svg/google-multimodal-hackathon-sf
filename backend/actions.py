@@ -16,6 +16,7 @@ from backend.contracts import (
 )
 from backend.bigquery import generate_report, bq_available
 from backend.documents import MARKETING_BRIEF, revise_document
+from backend.sponsor_digitalocean import do_archive_report
 
 logger = logging.getLogger(__name__)
 
@@ -377,7 +378,24 @@ class ActionSession:
             )
             await _post_slack(slack_text)
             report["report_url"] = report_url
-            return [make_action_result("report", report, "sent", sentiment=sent)]
+            report["query"] = query
+
+            # Archive report to Knowledge Base
+            try:
+                await do_archive_report(report)
+            except Exception as exc:
+                logger.warning("Report KB archive failed: %s", exc)
+
+            # Strip heavy fields from WS payload (HTML is served via /report/ URL)
+            ws_payload = {
+                "report_id": report_id,
+                "report_url": report_url,
+                "query": query,
+                "summary": report.get("summary", ""),
+                "row_count": report.get("row_count", 0),
+                "sql": report.get("sql", ""),
+            }
+            return [make_action_result("report", ws_payload, "sent", sentiment=sent)]
         except Exception as exc:
             logger.error("Report generation failed: %s", exc)
             return [make_action_result("report", {"query": query}, "failed", str(exc), sentiment=sent)]

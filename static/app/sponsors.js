@@ -8,6 +8,8 @@ window.MeetingAgent = window.MeetingAgent || {};
   const sponsorState = {
     kbConnected: false,
     meetingsArchived: 0,
+    reportsGenerated: 0,
+    reports: [],  // {report_id, query, summary, report_url}
     memoryConnected: false,
     memoryCommitments: 0,
     memoryDismissed: false,
@@ -70,8 +72,47 @@ window.MeetingAgent = window.MeetingAgent || {};
 
   function updateKBCounter() {
     if (dom.kbCounter) {
-      dom.kbCounter.textContent = `${sponsorState.meetingsArchived} meeting${sponsorState.meetingsArchived !== 1 ? 's' : ''} archived`;
+      const parts = [`${sponsorState.meetingsArchived} meeting${sponsorState.meetingsArchived !== 1 ? 's' : ''} archived`];
+      if (sponsorState.reportsGenerated > 0) {
+        parts.push(`${sponsorState.reportsGenerated} report${sponsorState.reportsGenerated !== 1 ? 's' : ''}`);
+      }
+      dom.kbCounter.textContent = parts.join(' · ');
     }
+  }
+
+  function addReportToKB(payload) {
+    if (!payload || !payload.report_id) return;
+    sponsorState.reportsGenerated++;
+    sponsorState.reports.push(payload);
+    updateKBCounter();
+    renderReports();
+  }
+
+  function renderReports() {
+    const container = dom.kbReports;
+    if (!container) return;
+    container.innerHTML = '';
+    for (const report of sponsorState.reports) {
+      const el = document.createElement('a');
+      el.href = report.report_url;
+      el.target = '_blank';
+      el.className = 'flex items-center gap-2 p-1.5 rounded bg-primary/5 hover:bg-primary/15 border border-primary/20 transition-colors card-enter cursor-pointer';
+      el.innerHTML = `
+        <span class="material-symbols-outlined text-sm text-primary flex-shrink-0">bar_chart</span>
+        <div class="min-w-0 flex-1">
+          <p class="text-[10px] text-white font-medium truncate">${escapeHtml(report.query || 'Report')}</p>
+          <p class="text-[9px] text-slate-400 truncate">${report.row_count || 0} rows · ${escapeHtml((report.summary || '').slice(0, 60))}</p>
+        </div>
+        <span class="material-symbols-outlined text-[12px] text-primary/60 flex-shrink-0">open_in_new</span>
+      `;
+      container.appendChild(el);
+    }
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
   }
 
   function flashMeetingArchived() {
@@ -177,6 +218,14 @@ window.MeetingAgent = window.MeetingAgent || {};
       case 'flow_status':
         updateFlowStatus(message.data || message);
         return true;
+      case 'action': {
+        // Intercept report actions to display in KB panel
+        const data = message.data || message;
+        if (data && data.type === 'report' && data.status === 'sent' && data.payload) {
+          addReportToKB(data.payload);
+        }
+        return false; // still let render.js handle the action card
+      }
       default:
         return false;
     }
@@ -189,6 +238,8 @@ window.MeetingAgent = window.MeetingAgent || {};
   function resetSponsorState() {
     sponsorState.kbConnected = false;
     sponsorState.meetingsArchived = 0;
+    sponsorState.reportsGenerated = 0;
+    sponsorState.reports = [];
     sponsorState.memoryConnected = false;
     sponsorState.memoryCommitments = 0;
     sponsorState.memoryDismissed = false;
@@ -202,6 +253,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     updateKBCounter();
     updateKBStatus({ connected: false });
     renderFlowAgents();
+    if (dom.kbReports) dom.kbReports.innerHTML = '';
 
     if (dom.memoryCard) {
       dom.memoryCard.classList.add('hidden');
@@ -243,6 +295,7 @@ window.MeetingAgent = window.MeetingAgent || {};
       kbDot: document.getElementById('sponsor-kb-dot'),
       kbStatus: document.getElementById('sponsor-kb-status'),
       kbCounter: document.getElementById('sponsor-kb-counter'),
+      kbReports: document.getElementById('sponsor-kb-reports'),
       kbChatBtn: document.getElementById('sponsor-kb-chat-btn'),
       // Header memory badge
       memoryBadge: document.getElementById('sponsor-memory-badge'),

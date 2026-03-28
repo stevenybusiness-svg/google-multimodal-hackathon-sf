@@ -187,6 +187,12 @@ window.MeetingAgent = window.MeetingAgent || {};
     } else if (type === 'infra' && action.payload) {
       const p = action.payload;
       payloadText = `VM: ${p.name || 'unnamed'} (${p.machine_type || 'e2-medium'}, ${p.zone || 'us-central1-a'}) — ${p.status || 'pending'}`;
+    } else if (type === 'report' && action.payload) {
+      const p = action.payload;
+      payloadText = `📊 ${p.query || 'Report'} — ${p.row_count || 0} rows`;
+      if (p.report_url) {
+        payloadText += ` · <a href="${p.report_url}" target="_blank" class="text-primary underline">View Report</a>`;
+      }
     } else {
       payloadText = action.payload
         ? (typeof action.payload === 'object'
@@ -241,7 +247,11 @@ window.MeetingAgent = window.MeetingAgent || {};
 
     const summary = document.createElement('p');
     summary.className = 'text-xs text-slate-300 leading-snug';
-    summary.textContent = payloadText;
+    if (type === 'report') {
+      summary.innerHTML = payloadText;
+    } else {
+      summary.textContent = payloadText;
+    }
     card.append(header, summary);
 
     const statusEl = document.createElement('p');

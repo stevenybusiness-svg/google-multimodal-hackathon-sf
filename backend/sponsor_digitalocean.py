@@ -115,6 +115,29 @@ async def do_archive_meeting(
     return f"Archived meeting {session_id} ({len(document)} chars)"
 
 
+async def do_archive_report(report: dict) -> str | None:
+    """Archive a generated report to the Knowledge Base."""
+    ts = datetime.now(timezone.utc).isoformat()
+    lines = [
+        f"# Report — {report.get('report_id', 'unknown')}",
+        f"Generated: {ts}",
+        f"Query: {report.get('query', '')}",
+        "",
+        f"## SQL\n{report.get('sql', '')}",
+        "",
+        f"## Summary\n{report.get('summary', '')}",
+        "",
+        f"## Results ({report.get('row_count', 0)} rows)",
+    ]
+    for row in (report.get("results") or [])[:20]:
+        lines.append(f"- {json.dumps(row, default=str)}")
+    document = "\n".join(lines)
+    _knowledge_base.append(document)
+    logger.info("KB archived report: %s (%d chars, total %d docs)",
+                report.get("report_id"), len(document), len(_knowledge_base))
+    return f"Archived report {report.get('report_id')} ({len(document)} chars)"
+
+
 # -- Chat: query KB via DO inference ----------------------------------------
 
 def _build_kb_context(limit: int = 5) -> str:

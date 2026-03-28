@@ -99,6 +99,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     document: { label: 'Document', colorClasses: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
     email: { label: 'Email Summary', colorClasses: 'bg-teal-500/15 text-teal-400 border-teal-500/30' },
     infra: { label: 'Infrastructure', colorClasses: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
+    report: { label: 'Report', colorClasses: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30' },
   };
 
   function timeStr() {

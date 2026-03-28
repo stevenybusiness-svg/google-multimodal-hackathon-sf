@@ -114,45 +114,6 @@ async def chat_page():
     )
 
 
-@app.post("/api/chat")
-async def api_chat(request: Request):
-    """Query the DigitalOcean Knowledge Base about past meeting data."""
-    body = await request.json()
-    message = body.get("message", "").strip()
-    if not message:
-        return JSONResponse({"error": "message is required"}, status_code=400)
-
-    if not do_available():
-        return JSONResponse({
-            "response": (
-                "The DigitalOcean Knowledge Base is not configured. "
-                "Please set DO_AGENT_ENDPOINT and DO_AGENT_ACCESS_KEY "
-                "environment variables to enable meeting memory."
-            )
-        })
-
-    from backend.sponsor_digitalocean import _get_client
-    client = _get_client()
-    if client is None:
-        return JSONResponse({
-            "response": "Unable to connect to the knowledge base. Please check your configuration."
-        })
-
-    try:
-        response = await client.chat.completions.create(
-            model="n/a",
-            messages=[{"role": "user", "content": message}],
-        )
-        answer = response.choices[0].message.content or "No relevant information found."
-        return JSONResponse({"response": answer})
-    except Exception as exc:
-        logger.error("Chat API error: %s", exc)
-        return JSONResponse(
-            {"error": "Failed to query knowledge base. Please try again."},
-            status_code=500,
-        )
-
-
 @app.websocket("/ws/audio")
 async def websocket_audio(ws: WebSocket):
     await ws.accept()

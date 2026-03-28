@@ -6,7 +6,7 @@ This document catalogs every Google Cloud and Google API call in the Meeting Age
 
 - **Platform:** Google Cloud Run (fully managed)
 - **Region:** `us-central1`
-- **Service URL:** `https://meeting-agent-974516981471.us-central1.run.app`
+- **Service URL:** `https://meeting-agent-31043195041.us-central1.run.app`
 - **Container:** Python 3.12-slim, Dockerfile in project root
 
 ## Google APIs Used (6 Services)

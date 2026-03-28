@@ -84,7 +84,7 @@ Now if someone says "sure, I'll handle the budget review" while looking uncertai
 
 ## Try It
 
-The live demo is at: **https://meeting-agent-974516981471.us-central1.run.app**
+The live demo is at: **https://meeting-agent-31043195041.us-central1.run.app**
 
 Start a meeting, talk about scheduling follow-ups and updating documents, and watch the agent create calendar events, send Slack messages, and revise documents — all before you stop talking.
 

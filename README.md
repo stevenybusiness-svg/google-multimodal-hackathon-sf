@@ -4,7 +4,7 @@ An autonomous meeting agent that listens to conversations in real time, detects 
 
 **Built for:** [Gemini Live Agent Challenge](https://geminiliveagentchallenge.devpost.com/)
 
-**Live Demo:** [https://meeting-agent-974516981471.us-central1.run.app](https://meeting-agent-974516981471.us-central1.run.app)
+**Live Demo:** [https://meeting-agent-31043195041.us-central1.run.app](https://meeting-agent-31043195041.us-central1.run.app)
 
 ## Google Cloud Services Used
 

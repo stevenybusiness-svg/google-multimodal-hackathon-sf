@@ -1,7 +1,7 @@
 window.MeetingAgent = window.MeetingAgent || {};
 
 (() => {
-  const { core, render, media, documents } = window.MeetingAgent;
+  const { core, render, media, documents, sponsors } = window.MeetingAgent;
   const { dom, state, contracts, ensureSessionId, resetSessionId, sessionQuery } = core;
 
   function closeWs() {
@@ -12,7 +12,12 @@ window.MeetingAgent = window.MeetingAgent || {};
   }
 
   function handleWsMessage(message) {
-    if (!message || !contracts.wsTypes.has(message.type)) return;
+    if (!message) return;
+
+    // Route sponsor integration messages first
+    if (sponsors && sponsors.handleSponsorMessage(message)) return;
+
+    if (!contracts.wsTypes.has(message.type)) return;
     if (message.type === 'pipeline') {
       if (window.MeetingAgent.pipeline) {
         window.MeetingAgent.pipeline.handlePipelineEvent(message.data);
@@ -38,6 +43,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     dom.startBtn.disabled = true;
     render.setStartError('');
     render.resetMeetingState();
+    if (sponsors) sponsors.resetSponsorState();
     ensureSessionId();
     render.showScreen('meeting');
     dom.statusText.textContent = 'Connecting...';
@@ -77,6 +83,7 @@ window.MeetingAgent = window.MeetingAgent || {};
     state.starting = false;
     dom.startBtn.disabled = false;
     if (window.MeetingAgent.pipeline) {
+      window.MeetingAgent.pipeline.stopAnimation();
       window.MeetingAgent.pipeline.startAnimation();
     }
     await documents.loadDocumentWidget();

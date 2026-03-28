@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from google import genai
 
 from backend.contracts import UnderstandingResult, empty_understanding
+from backend.sponsor_digitalocean import do_available, do_query_meeting_memory
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,9 @@ Return ONLY valid JSON (no markdown fences):
 
 If nothing found: {{"commitments": [], "agreements": [], "meeting_requests": [], "document_revisions": [], "infrastructure_requests": [], "sentiment": "neutral"}}
 
+PRIOR MEETING CONTEXT (from DigitalOcean Knowledge Base — may be empty):
+{prior_context}
+
 TRANSCRIPT:
 {transcript}
 
@@ -103,6 +107,14 @@ async def understand_transcript(transcript: str, face_sentiment: dict | None = N
             f"Face emotion: {face_sentiment.get('sentiment', 'neutral')}, "
             f"Engagement: {face_sentiment.get('engagement', 0):.2f}"
         )
+    # Query DO Knowledge Base for prior meeting context
+    prior_context = ""
+    if do_available():
+        try:
+            prior_context = await do_query_meeting_memory(transcript[:500])
+        except Exception as exc:
+            logger.warning("DO memory query failed (continuing without): %s", exc)
+
     text = ""
     for attempt in range(3):
         try:
@@ -114,6 +126,7 @@ async def understand_transcript(transcript: str, face_sentiment: dict | None = N
                         transcript=transcript,
                         face_context=face_context,
                         now_iso=now_iso,
+                        prior_context=prior_context or "None",
                     ),
                 )
             text = _strip_json_fences((response.text or "").strip())

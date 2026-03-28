@@ -65,6 +65,19 @@ class InfraRequest(TypedDict, total=False):
     sentiment: str           # gate: only provision on "positive"
 
 
+class ContainerRequest(TypedDict, total=False):
+    name: str                # service name, e.g. "web-api"
+    image: str               # container image, e.g. "gcr.io/project/image:tag"
+    region: str              # e.g. "us-central1"
+    port: int                # container port, default 8080
+    memory: str              # e.g. "512Mi", "1Gi"
+    cpu: str                 # e.g. "1", "2"
+    min_instances: int       # default 0
+    max_instances: int       # default 1
+    description: str
+    sentiment: str           # gate: only provision on "positive"
+
+
 class UnderstandingResult(TypedDict):
     commitments: list[Commitment]
     agreements: list[Agreement]

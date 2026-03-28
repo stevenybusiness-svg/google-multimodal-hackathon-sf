@@ -1,11 +1,12 @@
 window.MeetingAgent = window.MeetingAgent || {};
 
 (() => {
-  if (!window.MeetingAgent.core || !window.MeetingAgent.render || !window.MeetingAgent.media || !window.MeetingAgent.documents || !window.MeetingAgent.session) {
+  if (!window.MeetingAgent.core || !window.MeetingAgent.render || !window.MeetingAgent.media || !window.MeetingAgent.documents || !window.MeetingAgent.sponsors || !window.MeetingAgent.session) {
     throw new Error('Meeting Agent modules failed to load');
   }
 
   window.MeetingAgent.documents.init();
+  window.MeetingAgent.sponsors.init();
   window.MeetingAgent.session.init();
   window.MeetingAgent.documents.loadDocumentWidget();
 

@@ -51,19 +51,22 @@
     #transcript::-webkit-scrollbar, #actions-feed::-webkit-scrollbar,
     #summary-transcript::-webkit-scrollbar, #summary-actions::-webkit-scrollbar,
     #doc-widget-content::-webkit-scrollbar, #doc-modal-body::-webkit-scrollbar,
-    #pipeline-actions::-webkit-scrollbar {
+    #pipeline-actions::-webkit-scrollbar,
+    #sponsor-audit-list::-webkit-scrollbar {
       width: 5px;
     }
     #transcript::-webkit-scrollbar-track, #actions-feed::-webkit-scrollbar-track,
     #summary-transcript::-webkit-scrollbar-track, #summary-actions::-webkit-scrollbar-track,
     #doc-widget-content::-webkit-scrollbar-track, #doc-modal-body::-webkit-scrollbar-track,
-    #pipeline-actions::-webkit-scrollbar-track {
+    #pipeline-actions::-webkit-scrollbar-track,
+    #sponsor-audit-list::-webkit-scrollbar-track {
       background: transparent;
     }
     #transcript::-webkit-scrollbar-thumb, #actions-feed::-webkit-scrollbar-thumb,
     #summary-transcript::-webkit-scrollbar-thumb, #summary-actions::-webkit-scrollbar-thumb,
     #doc-widget-content::-webkit-scrollbar-thumb, #doc-modal-body::-webkit-scrollbar-thumb,
-    #pipeline-actions::-webkit-scrollbar-thumb {
+    #pipeline-actions::-webkit-scrollbar-thumb,
+    #sponsor-audit-list::-webkit-scrollbar-thumb {
       background: #30363d; border-radius: 3px;
     }
   </style>
@@ -207,6 +210,11 @@
             <span class="material-symbols-outlined text-[12px]">mood</span>
             <span id="sentiment-text">NEUTRAL</span>
           </div>
+          <!-- DigitalOcean Memory badge -->
+          <div id="sponsor-memory-badge" class="flex items-center gap-1.5 px-2 py-0.5 rounded border border-border-muted bg-bg-dark text-[10px] font-mono uppercase tracking-wider">
+            <span id="sponsor-memory-dot" class="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-slate-500"></span>
+            <span id="sponsor-memory-label" class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Meeting Memory: Offline</span>
+          </div>
         </div>
         <button id="stop-btn" class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-danger/10 border border-danger/30 text-danger text-xs font-bold hover:bg-danger/20 transition-colors">
           <span class="material-symbols-outlined text-sm">stop_circle</span>
@@ -246,6 +254,90 @@
             <span id="action-count" class="hidden px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[10px] font-bold">0 NEW</span>
           </div>
           <div id="actions-feed" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- DigitalOcean Memory info card (dismissible) -->
+      <div id="sponsor-memory-card" class="hidden mx-4 mt-2 p-3 rounded-lg bg-primary/5 border border-primary/20 flex items-center gap-3">
+        <span class="text-base flex-shrink-0">&#x1F4DA;</span>
+        <p id="sponsor-memory-card-text" class="text-xs text-primary/80 flex-1">Prior context loaded: 0 open commitments from past meetings</p>
+        <button id="sponsor-memory-dismiss" class="flex-shrink-0 size-6 rounded flex items-center justify-center hover:bg-bg-dark/50 transition-colors">
+          <span class="material-symbols-outlined text-sm text-slate-400 hover:text-white">close</span>
+        </button>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════
+           SPONSOR INTEGRATION PANELS
+           ═══════════════════════════════════════════════════════════════════ -->
+      <div class="flex-shrink-0 border-t border-border-muted bg-surface/50">
+        <div class="flex items-center gap-2 px-4 py-2 border-b border-border-muted">
+          <span class="material-symbols-outlined text-sm text-slate-400">extension</span>
+          <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sponsor Integrations</h2>
+        </div>
+
+        <div class="flex divide-x divide-border-muted" style="max-height: 220px;">
+
+          <!-- Panel 1: Unkey Audit Trail -->
+          <div id="sponsor-audit-panel" class="flex-1 flex flex-col min-w-0">
+            <button id="sponsor-audit-toggle" class="flex items-center justify-between px-3 py-2 w-full text-left hover:bg-bg-dark/30 transition-colors group">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-amber-400">shield</span>
+                <span class="text-[10px] font-bold text-white uppercase tracking-wider">Audit Trail</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-400 font-mono uppercase font-bold">Unkey</span>
+              </div>
+              <span id="sponsor-audit-chevron" class="material-symbols-outlined text-sm text-slate-400 group-hover:text-white transition-colors">expand_less</span>
+            </button>
+            <div id="sponsor-audit-body" class="flex flex-col flex-1 min-h-0 px-3 pb-2">
+              <!-- Kill switch -->
+              <button id="sponsor-kill-btn" class="w-full h-9 bg-danger hover:bg-danger/90 text-white text-xs font-bold uppercase tracking-wider rounded-lg border border-danger/50 transition-colors flex items-center justify-center gap-1.5 mb-2 flex-shrink-0">
+                <span class="material-symbols-outlined text-sm">dangerous</span>
+                KILL SWITCH
+              </button>
+              <!-- Audit counter -->
+              <p id="sponsor-audit-counter" class="text-[10px] text-slate-500 mb-1.5 flex-shrink-0">0 actions audited this session</p>
+              <!-- Audit entries list -->
+              <div id="sponsor-audit-list" class="flex-1 overflow-y-auto space-y-1.5 min-h-0"></div>
+            </div>
+          </div>
+
+          <!-- Panel 2: Railtracks Flow Status -->
+          <div class="flex-1 flex flex-col min-w-0">
+            <button id="sponsor-flow-toggle" class="flex items-center justify-between px-3 py-2 w-full text-left hover:bg-bg-dark/30 transition-colors group">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-teal-400">account_tree</span>
+                <span class="text-[10px] font-bold text-white uppercase tracking-wider">Agent Flow</span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded border border-teal-500/30 bg-teal-500/10 text-teal-400 font-mono uppercase font-bold">Railtracks</span>
+              </div>
+              <span id="sponsor-flow-chevron" class="material-symbols-outlined text-sm text-slate-400 group-hover:text-white transition-colors">expand_less</span>
+            </button>
+            <div id="sponsor-flow-body" class="px-3 pb-3 space-y-2">
+              <!-- TranscriptAnalyzer -->
+              <div class="flex items-center gap-2.5">
+                <span id="flow-dot-TranscriptAnalyzer" class="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-slate-500"></span>
+                <span class="text-[10px] text-slate-300 font-mono">TranscriptAnalyzer</span>
+                <span id="flow-label-TranscriptAnalyzer" class="text-[10px] text-slate-500 ml-auto">idle</span>
+              </div>
+              <!-- SentimentMonitor -->
+              <div class="flex items-center gap-2.5">
+                <span id="flow-dot-SentimentMonitor" class="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-slate-500"></span>
+                <span class="text-[10px] text-slate-300 font-mono">SentimentMonitor</span>
+                <span id="flow-label-SentimentMonitor" class="text-[10px] text-slate-500 ml-auto">idle</span>
+              </div>
+              <!-- ActionExecutor -->
+              <div class="flex items-center gap-2.5">
+                <span id="flow-dot-ActionExecutor" class="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-slate-500"></span>
+                <span class="text-[10px] text-slate-300 font-mono">ActionExecutor</span>
+                <span id="flow-label-ActionExecutor" class="text-[10px] text-slate-500 ml-auto">idle</span>
+              </div>
+              <!-- MeetingMemory -->
+              <div class="flex items-center gap-2.5">
+                <span id="flow-dot-MeetingMemory" class="inline-block w-2 h-2 rounded-full flex-shrink-0 bg-slate-500"></span>
+                <span class="text-[10px] text-slate-300 font-mono">MeetingMemory</span>
+                <span id="flow-label-MeetingMemory" class="text-[10px] text-slate-500 ml-auto">idle</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -338,12 +430,13 @@
     </div>
   </div>
 
-  <script src="/static/app/core.js?v=8"></script>
-  <script src="/static/app/render.js?v=8"></script>
-  <script src="/static/app/documents.js?v=8"></script>
-  <script src="/static/app/media.js?v=8"></script>
-  <script src="/static/app/session.js?v=8"></script>
-  <script src="/static/app/pipeline.js?v=8"></script>
-  <script src="/static/app.js?v=8"></script>
+  <script src="/static/app/core.js?v=9"></script>
+  <script src="/static/app/render.js?v=9"></script>
+  <script src="/static/app/documents.js?v=9"></script>
+  <script src="/static/app/media.js?v=9"></script>
+  <script src="/static/app/sponsors.js?v=9"></script>
+  <script src="/static/app/session.js?v=10"></script>
+  <script src="/static/app/pipeline.js?v=9"></script>
+  <script src="/static/app.js?v=9"></script>
 </body>
 </html>

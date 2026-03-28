@@ -27,11 +27,14 @@ from backend.contracts import (
     make_ws_message,
 )
 from backend.documents import MARKETING_BRIEF, REVISION_MODEL
-from backend.infra import provision_infrastructure
+from backend.infra import provision_container, provision_infrastructure
 from backend.understanding import TranscriptBuffer, UNDERSTANDING_MODEL
 from backend.session_state import session_registry
 from backend.vision import analyze_frame
 from backend.voice import VoicePipeline
+from backend.sponsor_unkey import unkey_available, create_action_audit, get_session_audit, revoke_all_session_keys
+from backend.sponsor_digitalocean import do_available, do_archive_meeting, do_query_meeting_memory
+from backend.sponsor_railtracks import get_flow_status, run_meeting_flow
 
 app = FastAPI(title="Meeting Agent")
 
@@ -137,6 +140,19 @@ async def websocket_audio(ws: WebSocket):
                         session_state.document_content = payload["content"]
                 await send(make_ws_message("action", action))
                 await send(make_ws_message("pipeline", {"event": "action_dispatched", "action_type": action["type"]}))
+
+                # Unkey audit trail — create per-action key
+                if unkey_available():
+                    payload_str = json.dumps(action.get("payload", {}), default=str)[:100]
+                    audit = await create_action_audit(
+                        session_id, action.get("type", "unknown"), payload_str,
+                        action.get("sentiment", "neutral"),
+                    )
+                    if audit:
+                        await send(make_ws_message("audit_trail", {
+                            "key_id": audit["key_id"], "action_type": action.get("type"),
+                            "payload_summary": payload_str, "sentiment": action.get("sentiment", "neutral"),
+                        }))
 
             actions = await session.dispatch(
                 understanding,
@@ -283,6 +299,18 @@ async def websocket_audio(ws: WebSocket):
         if _bg_tasks:
             await asyncio.gather(*_bg_tasks, return_exceptions=True)
 
+        # Archive meeting to DigitalOcean Knowledge Base
+        if _transcript_segments and do_available():
+            try:
+                transcript_docs = [{"text": seg} for seg in _transcript_segments]
+                archive_result = await do_archive_meeting(session_id, transcript_docs, _all_actions)
+                if archive_result:
+                    logger.info("[%s] Meeting archived to DO Knowledge Base", sid)
+                    if not client_disconnected:
+                        await send(make_ws_message("memory_status", {"status": "archived", "session_id": session_id}))
+            except Exception as exc:
+                logger.error("[%s] DO archive failed: %s", sid, exc)
+
         # Send meeting summary email
         if _transcript_segments:
             duration_s = asyncio.get_event_loop().time() - _session_start
@@ -344,3 +372,61 @@ async def api_frame(request: Request):
         except Exception:
             pass  # WS may be closed; vision result still returned via REST
     return JSONResponse(result or {})
+
+
+@app.post("/api/provision-container")
+async def api_provision_container(request: Request):
+    """Provision a Cloud Run container via Terraform. Accepts JSON body with container config."""
+    body = await request.json()
+    req = {
+        "name": body.get("name", "container"),
+        "image": body.get("image", "us-docker.pkg.dev/cloudrun/container/hello"),
+        "region": body.get("region", "us-central1"),
+        "port": body.get("port", 8080),
+        "memory": body.get("memory", "512Mi"),
+        "cpu": body.get("cpu", "1"),
+        "min_instances": body.get("min_instances", 0),
+        "max_instances": body.get("max_instances", 1),
+        "sentiment": "positive",
+    }
+    result = await provision_container(req)
+    return JSONResponse(result)
+
+
+# -- Sponsor integration endpoints ------------------------------------------
+
+@app.get("/api/sponsors/status")
+async def sponsors_status():
+    """Return which sponsor integrations are active."""
+    return JSONResponse({
+        "unkey": unkey_available(),
+        "digitalocean": do_available(),
+        "railtracks": True,  # always available (uses existing GOOGLE_API_KEY)
+    })
+
+
+@app.post("/api/unkey/kill")
+async def unkey_kill(request: Request):
+    """Kill switch — revoke all Unkey audit keys for a session."""
+    body = await request.json()
+    sid = body.get("session_id", "")
+    if not sid:
+        return JSONResponse({"error": "session_id required"}, status_code=400)
+    revoked = await revoke_all_session_keys(sid)
+    return JSONResponse({"revoked": revoked, "session_id": sid})
+
+
+@app.get("/api/unkey/audit")
+async def unkey_audit(request: Request):
+    """Get audit trail for a session."""
+    sid = request.query_params.get("session_id", "")
+    if not sid:
+        return JSONResponse({"error": "session_id required"}, status_code=400)
+    trail = await get_session_audit(sid)
+    return JSONResponse({"session_id": sid, "actions": trail, "count": len(trail)})
+
+
+@app.get("/api/railtracks/status")
+async def railtracks_status():
+    """Get Railtracks agent flow status for the visualizer."""
+    return JSONResponse(get_flow_status())

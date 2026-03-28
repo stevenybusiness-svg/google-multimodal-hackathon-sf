@@ -19,3 +19,19 @@ build/
 .idea/
 .vscode/
 *.swp
+
+# Claude Code local config
+.claude/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Composio plugin
+connect-apps-plugin/
+
+# Terraform generated
+terraform/.terraform.lock.hcl
+terraform/.terraform/
+
+# Planning artifacts
+.planning/

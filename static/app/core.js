@@ -69,7 +69,7 @@ window.MeetingAgent = window.MeetingAgent || {};
   };
 
   const contracts = {
-    wsTypes: new Set(['transcript', 'interim', 'status', 'sentiment', 'action', 'done', 'pipeline']),
+    wsTypes: new Set(['transcript', 'interim', 'status', 'sentiment', 'action', 'done', 'pipeline', 'audit_trail', 'memory_status', 'flow_status']),
     actionTypes: new Set(['slack', 'calendar', 'task', 'document', 'infra']),
   };
 

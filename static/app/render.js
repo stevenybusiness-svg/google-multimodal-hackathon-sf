@@ -108,12 +108,16 @@ window.MeetingAgent = window.MeetingAgent || {};
 
     const { face_box: faceBox, sentiment } = result;
     const color = overlayColors[sentiment] || overlayColors.neutral;
-    const scaleX = canvasWidth / sourceW;
-    const scaleY = canvasHeight / sourceH;
-    const x = faceBox.x * scaleX;
-    const y = faceBox.y * scaleY;
-    const w = faceBox.w * scaleX;
-    const h = faceBox.h * scaleY;
+    // Use cover scaling to match object-fit:cover on the video element
+    const scale = Math.max(canvasWidth / sourceW, canvasHeight / sourceH);
+    const scaledW = sourceW * scale;
+    const scaledH = sourceH * scale;
+    const offsetX = (canvasWidth - scaledW) / 2;
+    const offsetY = (canvasHeight - scaledH) / 2;
+    const x = faceBox.x * scale + offsetX;
+    const y = faceBox.y * scale + offsetY;
+    const w = (faceBox.w || faceBox.width) * scale;
+    const h = (faceBox.h || faceBox.height) * scale;
 
     ctx.save();
     ctx.shadowColor = color;
@@ -501,6 +505,16 @@ window.MeetingAgent = window.MeetingAgent || {};
     const value = (data && data.value) || 'neutral';
     state.currentSentiment = value;
     updateSentiment(value);
+    // Trigger canvas redraw with new sentiment color if we have a stored face position
+    if (state.lastVisionResult && state.lastVisionResult.face_box && !state.faceDetector) {
+      const vid = dom.visionVideo;
+      if (vid && vid.videoWidth && vid.videoHeight) {
+        // Map transcript sentiment to overlay-compatible value
+        const mapped = value === 'positive' ? 'happiness' : value === 'negative' ? 'anger' : value;
+        const tempResult = { ...state.lastVisionResult, sentiment: mapped };
+        drawSentimentOverlay(tempResult, vid.videoWidth, vid.videoHeight);
+      }
+    }
     _hideAnalyzing();
     dom.processingInd.classList.add('hidden');
     dom.processingInd.classList.remove('flex');

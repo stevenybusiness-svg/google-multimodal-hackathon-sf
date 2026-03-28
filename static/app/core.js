@@ -86,10 +86,13 @@ window.MeetingAgent = window.MeetingAgent || {};
 
   const overlayColors = {
     happiness: '#22c55e',
+    positive: '#22c55e',
     neutral: '#94a3b8',
     sadness: '#a855f7',
+    negative: '#ef4444',
     anger: '#ef4444',
     surprise: '#eab308',
+    uncertain: '#eab308',
   };
 
   const actionBadge = {

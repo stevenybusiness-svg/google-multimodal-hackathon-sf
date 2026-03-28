@@ -97,6 +97,7 @@ window.MeetingAgent = window.MeetingAgent || {};
       const faces = await state.faceDetector.detect(dom.visionVideo);
       const videoWidth = dom.visionVideo.videoWidth;
       const videoHeight = dom.visionVideo.videoHeight;
+      const sentiment = (state.lastVisionResult && state.lastVisionResult.sentiment) || state.currentSentiment || 'neutral';
       if (faces.length > 0 && videoWidth && videoHeight) {
         const target = videoToCanvas(faces[0].boundingBox, videoWidth, videoHeight);
         if (state.smoothBox) {
@@ -107,9 +108,24 @@ window.MeetingAgent = window.MeetingAgent || {};
         } else {
           state.smoothBox = { ...target };
         }
-        drawLocalFaceOverlay(state.smoothBox, (state.lastVisionResult && state.lastVisionResult.sentiment) || 'neutral');
+        state._localFaceFound = true;
+        drawLocalFaceOverlay(state.smoothBox, sentiment);
+      } else if (state.lastVisionResult && state.lastVisionResult.face_box && videoWidth && videoHeight) {
+        // Fallback: use server-side face detection when local FaceDetector misses
+        const target = videoToCanvas(state.lastVisionResult.face_box, videoWidth, videoHeight);
+        if (state.smoothBox) {
+          state.smoothBox.x = lerp(state.smoothBox.x, target.x, 0.3);
+          state.smoothBox.y = lerp(state.smoothBox.y, target.y, 0.3);
+          state.smoothBox.w = lerp(state.smoothBox.w, target.w, 0.3);
+          state.smoothBox.h = lerp(state.smoothBox.h, target.h, 0.3);
+        } else {
+          state.smoothBox = { ...target };
+        }
+        state._localFaceFound = false;
+        drawLocalFaceOverlay(state.smoothBox, sentiment);
       } else {
         state.smoothBox = null;
+        state._localFaceFound = false;
         dom.visionCanvas.getContext('2d').clearRect(0, 0, dom.visionCanvas.width, dom.visionCanvas.height);
       }
     } catch (error) {
@@ -157,6 +173,7 @@ window.MeetingAgent = window.MeetingAgent || {};
               if (!state.faceDetector) {
                 render.drawSentimentOverlay(result, videoWidth, videoHeight);
               }
+              // When faceDetector exists, trackFaceLocal picks up lastVisionResult automatically
             } else if (state.lastVisionResult && !state.faceDetector) {
               render.drawSentimentOverlay(state.lastVisionResult, videoWidth, videoHeight);
             }

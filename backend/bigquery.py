@@ -1,6 +1,7 @@
 """BigQuery service — NL-to-SQL report generation for the meeting agent."""
 
 import asyncio
+import json
 import logging
 import os
 import random
@@ -8,6 +9,7 @@ from datetime import date, timedelta
 from urllib.parse import quote
 
 from google import genai
+from google.api_core import exceptions as gapi_exceptions
 from google.cloud import bigquery
 
 logger = logging.getLogger(__name__)
@@ -225,41 +227,51 @@ def _generate_sample_rows(num_days: int = 365) -> list[dict]:
 
 
 async def setup_dataset(force_reseed: bool = False) -> str:
-    """Create dataset + table if needed, seed sample data if empty or forced. Returns status."""
+    """Create dataset + table if needed, seed sample data if empty or forced. Returns status.
+
+    If BigQuery returns a 403 (permission denied), returns a status message
+    indicating simulated-data mode rather than crashing.
+    """
     def _sync_setup() -> str:
-        client = _get_bq()
-        project = client.project
-        dataset_ref = f"{project}.{DATASET_ID}"
+        try:
+            client = _get_bq()
+            project = client.project
+            dataset_ref = f"{project}.{DATASET_ID}"
 
-        # Create dataset
-        dataset = bigquery.Dataset(dataset_ref)
-        dataset.location = "US"
-        client.create_dataset(dataset, exists_ok=True)
-        logger.info("Dataset %s ready", dataset_ref)
+            # Create dataset
+            dataset = bigquery.Dataset(dataset_ref)
+            dataset.location = "US"
+            client.create_dataset(dataset, exists_ok=True)
+            logger.info("Dataset %s ready", dataset_ref)
 
-        table_ref = f"{dataset_ref}.{TABLE_ID}"
+            table_ref = f"{dataset_ref}.{TABLE_ID}"
 
-        if force_reseed:
-            # Drop existing table and recreate with new schema
-            client.delete_table(table_ref, not_found_ok=True)
-            logger.info("Dropped existing table %s for reseed", table_ref)
+            if force_reseed:
+                # Drop existing table and recreate with new schema
+                client.delete_table(table_ref, not_found_ok=True)
+                logger.info("Dropped existing table %s for reseed", table_ref)
 
-        # Create table
-        table = bigquery.Table(table_ref, schema=SCHEMA)
-        client.create_table(table, exists_ok=True)
+            # Create table
+            table = bigquery.Table(table_ref, schema=SCHEMA)
+            client.create_table(table, exists_ok=True)
 
-        # Check if empty
-        count_query = f"SELECT COUNT(*) as cnt FROM `{table_ref}`"
-        result = list(client.query(count_query).result())
-        if result[0].cnt == 0:
-            rows = _generate_sample_rows()
-            errors = client.insert_rows_json(table_ref, rows)
-            if errors:
-                logger.error("BigQuery insert errors: %s", errors)
-                return f"Seeded with errors: {errors}"
-            logger.info("Seeded %d rows into %s", len(rows), table_ref)
-            return f"Created and seeded {len(rows)} rows"
-        return f"Table already has {result[0].cnt} rows"
+            # Check if empty
+            count_query = f"SELECT COUNT(*) as cnt FROM `{table_ref}`"
+            result = list(client.query(count_query).result())
+            if result[0].cnt == 0:
+                rows = _generate_sample_rows()
+                errors = client.insert_rows_json(table_ref, rows)
+                if errors:
+                    logger.error("BigQuery insert errors: %s", errors)
+                    return f"Seeded with errors: {errors}"
+                logger.info("Seeded %d rows into %s", len(rows), table_ref)
+                return f"Created and seeded {len(rows)} rows"
+            return f"Table already has {result[0].cnt} rows"
+        except gapi_exceptions.Forbidden as exc:
+            logger.warning(
+                "BigQuery 403 during setup — using simulated data mode: %s", exc
+            )
+            return "BigQuery unavailable (403 permission denied) — using simulated data mode"
 
     return await asyncio.to_thread(_sync_setup)
 
@@ -354,19 +366,83 @@ def get_report(report_id: str) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Simulated report fallback (when BigQuery returns 403 / permission denied)
+# ---------------------------------------------------------------------------
+
+
+async def _generate_simulated_results(query: str, sql: str) -> list[dict]:
+    """Use Gemini to produce realistic simulated query results when BQ is unavailable.
+
+    The prompt gives Gemini the schema and marketing-data context so it returns
+    plausible numbers consistent with the sample dataset profile (channels, segments,
+    regions, spend ranges, etc.).
+    """
+    project = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+    schema_desc = SCHEMA_DDL.format(project=project)
+
+    prompt = f"""You are a marketing-data simulator. Given the SQL query below and the table
+schema, produce realistic JSON rows that would plausibly result from running this
+query against a 365-day marketing campaigns dataset.
+
+{schema_desc}
+
+Key data characteristics (use these to keep numbers realistic):
+- Daily spend per channel-segment combo: $20-$4,400
+- CTR: 0.5%-8%, Conversion rate: 1%-8%
+- Avg deal sizes: $150-$2,100 depending on segment (enterprise highest)
+- Channels: {CHANNELS}
+- Segments: {SEGMENTS}
+- Regions: {REGIONS} (North America ~40%, Europe ~25%, APAC ~20%)
+- Products: {PRODUCTS}
+
+SQL query: {sql}
+User question: {query}
+
+Return ONLY a JSON array of objects (10-25 rows). Each object's keys must match the
+SELECT columns in the SQL. Use realistic numbers. No markdown fences, no explanation."""
+
+    def _call() -> list[dict]:
+        client = _get_genai()
+        resp = client.models.generate_content(model=NL_TO_SQL_MODEL, contents=prompt)
+        text = resp.text.strip()
+        # Strip markdown fences if present
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+        if text.endswith("```"):
+            text = text[:-3].rstrip()
+        if text.lower().startswith("json"):
+            text = text[4:].lstrip()
+        return json.loads(text)
+
+    return await asyncio.to_thread(_call)
+
+
+# ---------------------------------------------------------------------------
 # End-to-end report generation
 # ---------------------------------------------------------------------------
 
 
 async def generate_report(query: str) -> dict:
-    """NL question → SQL → execute → LLM-generated HTML report with charts."""
+    """NL question → SQL → execute → LLM-generated HTML report with charts.
+
+    Falls back to Gemini-simulated results when BigQuery returns a 403
+    (permission denied), so the demo works even without BQ IAM grants.
+    """
     import uuid
     from datetime import datetime, timezone
 
     sql = await nl_to_sql(query)
     logger.info("Generated SQL: %s", sql)
 
-    results = await run_query(sql)
+    source = "bigquery"
+    try:
+        results = await run_query(sql)
+    except gapi_exceptions.Forbidden as exc:
+        logger.warning(
+            "BigQuery 403 — falling back to simulated data: %s", exc
+        )
+        results = await _generate_simulated_results(query, sql)
+        source = "simulated"
 
     # LLM generates a full interactive HTML report with charts
     html, summary = await _build_html_report(query, sql, results)
@@ -379,6 +455,7 @@ async def generate_report(query: str) -> dict:
         "summary": summary,
         "results": results,
         "row_count": len(results),
+        "source": source,
         "created": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -391,6 +468,7 @@ async def generate_report(query: str) -> dict:
         "results": results,
         "summary": summary,
         "row_count": len(results),
+        "source": source,
         "looker_url": looker_url,
     }
 
